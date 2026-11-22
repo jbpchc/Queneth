@@ -1,0 +1,89 @@
+"use client";
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { api, type ApiSchemas } from "@/lib/api/client";
+
+export type Me = ApiSchemas["MeOut"];
+export type Role = Me["roles"][number];
+export const ME_KEY = ["me"] as const;
+
+/**
+ * The signed-in user, `null` for guests. Permissions come from the API so the
+ * UI can hide controls it knows will be refused; the API still enforces them.
+ */
+export function useSession() {
+  const query = useQuery({
+    queryKey: ME_KEY,
+    queryFn: async (): Promise<Me | null> => {
+      const { data, error, response } = await api.GET("/api/v1/me");
+      if (response.status === 401 || response.status === 403) return null;
+      if (error) throw error;
+      return data ?? null;
+    },
+    staleTime: 60_000,
+  });
+  const user = query.data ?? null;
+  return {
+    user,
+    status: query.isPending ? "loading" : user ? "authenticated" : "guest",
+    hasRole: (role: Role) => !!user?.roles.includes(role),
+    can: (permission: string) => !!user?.permissions.includes(permission),
+    refetch: query.refetch,
+  } as const;
+}
+
+export function useLogin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: ApiSchemas["LoginRequest"]) => {
+      const { data, error } = await api.POST("/api/v1/auth/login", { body });
+      if (error) throw error;
+      return data.user;
+    },
+    onSuccess: (user) => qc.setQueryData(ME_KEY, user),
+  });
+}
+
+export function useRegister() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: ApiSchemas["RegisterRequest"]) => {
+      const { data, error } = await api.POST("/api/v1/auth/register", { body });
+      if (error || !data) throw error;
+      return data.user;
+    },
+    onSuccess: (user) => qc.setQueryData(ME_KEY, user),
+  });
+}
+
+export function useLogout() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      await api.POST("/api/v1/auth/logout");
+    },
+    onSettled: () => {
+      qc.setQueryData(ME_KEY, null);
+      qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "me" });
+    },
+  });
+}
+
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (body: ApiSchemas["MeUpdate"]) => {
+      const { data, error } = await api.PATCH("/api/v1/me", { body });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (user) => qc.setQueryData(ME_KEY, user),
+  });
+}
+
+/** Where to land after sign-in when there's no ?next=. */
+export function homeFor(user: Me): string {
+  if (user.roles.includes("ADMIN")) return "/admin";
+  return "/";
+}

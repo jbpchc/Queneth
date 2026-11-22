@@ -1,0 +1,70 @@
+# Queneth local stack: three services, all configuration from .env files.
+#   docker compose up --build
+# Host ports are overridable (e.g. API_PORT=8001 docker compose up).
+
+name: queneth
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-queneth}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-queneth}
+      POSTGRES_DB: ${POSTGRES_DB:-queneth}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      target: dev
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      # Inside the compose network the database host is the `db` service.
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-queneth}:${POSTGRES_PASSWORD:-queneth}@db:5432/${POSTGRES_DB:-queneth}
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./backend:/app
+      - api-uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      target: dev
+    restart: unless-stopped
+    env_file: ./frontend/.env
+    environment:
+      # Server components inside the container reach the API by service name;
+      # the browser keeps using NEXT_PUBLIC_API_URL from frontend/.env.
+      API_INTERNAL_URL: http://api:8000/api/v1
+      WATCHPACK_POLLING: "true"
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+      - frontend-next:/app/.next
+    depends_on:
+      - api
+
+volumes:
+  db-data:
+  api-uploads:
+  frontend-node-modules:
+  frontend-next:

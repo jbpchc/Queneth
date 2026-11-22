@@ -1,0 +1,261 @@
+@import "tailwindcss" source(none);
+@import "../styles/tokens.css";
+
+/* Scan exactly the frontend sources, whatever directory the dev server starts in
+   (docker, `npm run dev`, or `npm --prefix frontend` from the repo root). */
+@source "..";
+
+/* Dark mode follows data-theme on <html> (set by next-themes). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Expose tokens as Tailwind utilities. `inline` makes utilities reference the
+ * token variables directly, so the light/dark swap in tokens.css just works.
+ */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-on-accent: var(--on-accent);
+  --color-accent-2: var(--accent-2);
+  --color-accent-2-hover: var(--accent-2-hover);
+  --color-on-accent-2: var(--on-accent-2);
+  --color-citrus: var(--pop-citrus);
+  --color-tangerine: var(--pop-tangerine);
+  --color-lilac: var(--pop-lilac);
+  --color-on-pop: var(--on-pop);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
+
+  --text-display: var(--type-display);
+  --text-display--line-height: var(--leading-display);
+  --text-h1: var(--type-h1);
+  --text-h1--line-height: var(--leading-display);
+  --text-h2: var(--type-h2);
+  --text-h2--line-height: 1.2;
+  --text-h3: var(--type-h3);
+  --text-h3--line-height: 1.3;
+  --text-body: var(--type-body);
+  --text-body--line-height: var(--leading-body);
+  --text-small: var(--type-small);
+  --text-small--line-height: 1.5;
+  --text-caption: var(--type-caption);
+  --text-caption--line-height: 1.4;
+
+  --radius-input: var(--r-input);
+  --radius-card: var(--r-card);
+  --radius-pill: var(--r-pill);
+
+  --shadow-1: var(--elev-1);
+  --shadow-2: var(--elev-2);
+  --shadow-3: var(--elev-3);
+
+  --ease-brand: var(--ease-out);
+  --max-width-measure: var(--measure);
+
+  --breakpoint-sm: 48rem; /* 768 */
+  --breakpoint-md: 64rem; /* 1024 */
+  --breakpoint-lg: 80rem; /* 1280 */
+  --breakpoint-xl: 96rem; /* 1536 */
+  --breakpoint-2xl: 96rem;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: 96px; /* clear the sticky header on anchor jumps */
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--type-body);
+    line-height: var(--leading-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background: var(--pop-citrus);
+    color: var(--on-pop);
+  }
+
+  /* 2px cobalt focus ring on every interactive element (WCAG 2.4.7 / 2.4.11). */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  /* Hide the native number spinners; steppers are custom. */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@layer components {
+  /* One price style everywhere (Gestalt: Similarity). */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Subtle film grain — hero sections only (spec §4). */
+  .grain {
+    position: relative;
+    isolation: isolate;
+  }
+  .grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.09;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  [data-theme="dark"] .grain::after {
+    mix-blend-mode: screen;
+    opacity: 0.06;
+  }
+
+  /* Shimmer sweep for the Pay with QueWallet CTA (spec §6). */
+  .shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      rgb(255 255 255 / 0.35) 50%,
+      transparent 80%
+    );
+    animation: shimmer-sweep 2.8s var(--ease-out) infinite;
+    pointer-events: none;
+  }
+}
+
+@keyframes shimmer-sweep {
+  0%,
+  55% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Overlay / dialog / sheet entrances (tailwind v4 `translate-*` uses the
+   independent `translate` property, so these transforms don't fight it). */
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes sheet-left {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes sheet-right {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/*
+ * Reduced motion: stop keyframe loops and smooth scrolling. Color/opacity
+ * transitions stay (fades are fine); every transform-based effect is written
+ * with Tailwind's `motion-safe:` variant, and Framer Motion components read the
+ * same preference through `useReducedMotion` and swap movement for fades.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  .shimmer::before {
+    display: none;
+  }
+}

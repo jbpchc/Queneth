@@ -1,0 +1,7 @@
+# Use inside Docker/Linux, where coverage's C tracer is available:
+#   pytest --cov --cov-config=.coveragerc.docker
+# SQLAlchemy's async layer runs in greenlets; without this, service lines after
+# each `await session...` are under-reported.
+[run]
+source = app/services, app/core
+concurrency = greenlet, thread

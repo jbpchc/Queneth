@@ -1,0 +1,139 @@
+/*
+ * Queneth design tokens — single source of truth for color, type, space,
+ * radius, elevation and motion. Tailwind reads these through `@theme inline`
+ * in globals.css, so utilities like `bg-surface` and `text-ink` resolve here.
+ *
+ * Contrast notes (WCAG AA, verified with a script; see docs/ASSUMPTIONS.md):
+ *  - Light status colors were darkened from the brief (#1F9D6B → #167A53,
+ *    #B7791F → #8F5F12, #D4343B → #C02A31) so they pass 4.5:1 as text.
+ *  - `--on-accent` flips to near-black in dark mode: white on #FF4FA3 is 3.04:1.
+ *  - `--border` is a decorative hairline (1.25:1). Form controls use
+ *    `--border-strong` (≥3:1, WCAG 1.4.11 non-text contrast).
+ */
+
+:root {
+  color-scheme: light;
+
+  /* ── Color: surfaces & ink ───────────────────────────── */
+  --bg: #faf7f2; /* porcelain */
+  --surface: #ffffff;
+  --surface-muted: #f1ece4;
+  --border: #e6ded2;
+  --border-strong: #8c8278;
+  --ink: #141214;
+  --ink-muted: #6b6470;
+
+  /* ── Color: brand ────────────────────────────────────── */
+  --accent: #c8136e; /* Que Magenta */
+  --accent-hover: #a90f5c;
+  --on-accent: #ffffff;
+  --accent-2: #2f4bff; /* Electric Cobalt */
+  --accent-2-hover: #1f37d6;
+  --on-accent-2: #ffffff;
+
+  /* ── Color: pops (always paired with ink text) ───────── */
+  --pop-citrus: #d7f94a;
+  --pop-tangerine: #ff7a1a;
+  --pop-lilac: #c9b6ff;
+  --on-pop: #141214;
+
+  /* ── Color: status (text-safe shades + soft tints) ───── */
+  --success: #167a53;
+  --success-soft: #e3f3ec;
+  --warning: #8f5f12;
+  --warning-soft: #f8eedb;
+  --danger: #c02a31;
+  --danger-soft: #fae5e5;
+
+  /* ── Focus ───────────────────────────────────────────── */
+  --focus-ring: var(--accent-2);
+
+  /* ── Elevation: soft, warm-tinted ────────────────────── */
+  --elev-1: 0 1px 2px rgb(60 40 20 / 0.05), 0 2px 8px rgb(60 40 20 / 0.04);
+  --elev-2: 0 2px 4px rgb(60 40 20 / 0.05), 0 8px 24px rgb(60 40 20 / 0.08);
+  --elev-3: 0 4px 8px rgb(60 40 20 / 0.06), 0 20px 48px rgb(60 40 20 / 0.12);
+
+  /* ── Glass header ────────────────────────────────────── */
+  --glass: rgb(250 247 242 / 0.72);
+
+  /* ── Typography: fluid scale (360px → 1536px) ────────── */
+  --type-display: clamp(3.5rem, 2.7347rem + 3.4013vw, 6rem); /* 56 → 96 */
+  --type-h1: clamp(2.5rem, 2.1939rem + 1.3605vw, 3.5rem); /* 40 → 56 */
+  --type-h2: clamp(1.75rem, 1.5969rem + 0.6803vw, 2.25rem); /* 28 → 36 */
+  --type-h3: clamp(1.25rem, 1.1735rem + 0.3401vw, 1.5rem); /* 20 → 24 */
+  --type-body: 1rem; /* 16 */
+  --type-small: 0.875rem; /* 14 */
+  --type-caption: 0.75rem; /* 12 */
+  --leading-display: 1.1;
+  --leading-body: 1.6;
+  --measure: 68ch;
+
+  /* ── Spacing: 4px base grid ──────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* ── Radius ──────────────────────────────────────────── */
+  --r-input: 8px;
+  --r-card: 20px;
+  --r-pill: 999px;
+
+  /* ── Motion ──────────────────────────────────────────── */
+  --dur-instant: 100ms; /* press feedback */
+  --dur-fast: 180ms; /* hover, toggles */
+  --dur-base: 280ms; /* drawers, modals, sections */
+  --dur-celebrate: 900ms; /* rewards only (600–1200ms band) */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  /* --ease-spring lives in src/lib/motion.ts (Framer spring: stiffness 400, damping 28) */
+
+  /* ── Hit areas ───────────────────────────────────────── */
+  --hit-min: 44px; /* UX: Fitts's Law — minimum touch target */
+  --cta-min: 48px; /* UX: Fitts's Law — primary CTA height */
+}
+
+/*
+ * Dark palette. next-themes sets data-theme on <html> from a blocking script,
+ * resolving "system" to the OS `prefers-color-scheme` before first paint, so
+ * one selector covers both the OS preference and the manual toggle.
+ */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0e0c10;
+  --surface: #1a171d;
+  --surface-muted: #241f28;
+  --border: #332d38;
+  --border-strong: #7a7182;
+  --ink: #f5f1ea;
+  --ink-muted: #a79fad;
+
+  --accent: #ff4fa3;
+  --accent-hover: #ff73b6;
+  --on-accent: #0e0c10;
+  --accent-2: #6f83ff;
+  --accent-2-hover: #8d9cff;
+  --on-accent-2: #0e0c10;
+
+  --pop-citrus: #d7f94a;
+  --pop-tangerine: #ff9a4d;
+  --pop-lilac: #9c85f2;
+  --on-pop: #141214;
+
+  --success: #4ed19a;
+  --success-soft: #12261e;
+  --warning: #e6b25c;
+  --warning-soft: #2a2114;
+  --danger: #ff7a80;
+  --danger-soft: #2e1517;
+
+  --elev-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
+  --elev-2: 0 2px 4px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.35);
+  --elev-3: 0 4px 8px rgb(0 0 0 / 0.35), 0 20px 48px rgb(0 0 0 / 0.45);
+
+  --glass: rgb(14 12 16 / 0.72);
+}
