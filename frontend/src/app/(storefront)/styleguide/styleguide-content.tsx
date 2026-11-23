@@ -174,7 +174,7 @@ export function StyleguideContent() {
             aria-pressed={hearted}
             aria-label={hearted ? "Remove from wishlist" : "Save to wishlist"}
             onClick={() => setHearted((h) => !h)}
-            whileTap={reduce ? undefined : { scale: 0.9 }}
+            whileTap={{ scale: reduce ? 1 : 0.9 }}
             animate={hearted && !reduce ? { scale: [1, 1.3, 1] } : { scale: 1 }}
             transition={pop}
             className="grid size-12 place-items-center rounded-full border border-border bg-surface shadow-1"

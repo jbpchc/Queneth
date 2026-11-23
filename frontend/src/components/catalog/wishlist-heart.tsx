@@ -41,7 +41,9 @@ export function WishlistHeart({
         e.stopPropagation();
         if (toggle(productId, !saved) && !saved) setBurst((b) => b + 1);
       }}
-      whileTap={reduce ? undefined : { scale: 0.88 }}
+      // Always pass whileTap (scale 1 under reduced motion): toggling the prop
+      // changes the server HTML (Motion adds tabindex) and breaks hydration.
+      whileTap={{ scale: reduce ? 1 : 0.88 }}
       className={cn(
         "relative grid place-items-center rounded-full bg-surface/85 text-ink shadow-1 backdrop-blur transition-colors hover:bg-surface",
         size === "lg" ? "size-12" : "size-11",
