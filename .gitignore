@@ -27,3 +27,9 @@ backend/openapi.json
 Thumbs.db
 .vscode/
 .idea/
+
+# Not part of the Queneth app (kept locally, not published)
+saas-promo/
+.agents/
+.claude/
+skills-lock.json
