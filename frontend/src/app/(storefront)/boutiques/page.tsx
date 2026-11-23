@@ -36,7 +36,7 @@ export default async function BoutiquesPage() {
             </Link>
             <div className="flex flex-1 flex-col gap-3 p-6">
               {b.logo_url && (
-                <Image src={b.logo_url} alt="" width={72} height={72} className="-mt-14 rounded-full border-4 border-surface bg-surface" />
+                <Image src={b.logo_url} alt="" width={72} height={72} className="relative z-10 -mt-14 size-[72px] rounded-full border-4 border-surface bg-surface object-cover" />
               )}
               <div>
                 <h2 className="text-h3 text-ink">

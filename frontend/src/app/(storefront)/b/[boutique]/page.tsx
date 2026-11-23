@@ -39,10 +39,10 @@ export default async function BoutiquePage({ params, searchParams }: Props) {
         emptyHint="Follow the boutique and its new pieces will appear on your home page."
         header={
           <>
-          <header className="-mt-20 grid gap-8 md:-mt-24 md:grid-cols-[1fr_340px]">
+          <header className="relative z-10 -mt-20 grid gap-8 md:-mt-24 md:grid-cols-[1fr_340px]">
             <div className="flex flex-col gap-4">
               {b.logo_url && (
-                <Image src={b.logo_url} alt={`${b.name} logo`} width={112} height={112} className="rounded-full border-4 border-bg bg-bg shadow-2" />
+                <Image src={b.logo_url} alt={`${b.name} logo`} width={112} height={112} className="size-28 rounded-full object-cover border-4 border-bg bg-bg shadow-2" />
               )}
               <div className="flex flex-col gap-2">
                 <h1 className="text-h1 text-ink">{b.name}</h1>

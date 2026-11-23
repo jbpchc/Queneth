@@ -360,9 +360,9 @@ function FeaturedBoutiques({ boutiques }: { boutiques: HomeData["featured_boutiq
               {b.banner_url && <Image src={b.banner_url} alt="" fill sizes="(min-width: 1024px) 25vw, 50vw" className="object-cover" />}
             </Link>
             <div className="flex flex-1 flex-col gap-3 p-5">
-              <div className="-mt-12 flex items-end gap-3">
+              <div className="relative z-10 -mt-12 flex items-end gap-3">
                 {b.logo_url && (
-                  <Image src={b.logo_url} alt="" width={64} height={64} className="rounded-full border-4 border-surface bg-surface" />
+                  <Image src={b.logo_url} alt="" width={64} height={64} className="size-16 rounded-full border-4 border-surface bg-surface object-cover" />
                 )}
               </div>
               <div>

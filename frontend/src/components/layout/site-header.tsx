@@ -3,7 +3,7 @@
 import { Heart, Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { SearchBox } from "@/components/catalog/search-box";
 
@@ -38,6 +38,26 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
   }, []);
   useHotkey("/", focusSearch);
 
+  // One category menu open at a time, tracked in state (not CSS :hover/:focus-within,
+  // which left a menu stuck open after clicking because the link kept focus).
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelClose = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = null;
+  };
+  const openNow = (label: string) => {
+    cancelClose();
+    setOpenMenu(label);
+  };
+  // Short grace period so moving the pointer from the tab to its menu doesn't close it.
+  const closeSoon = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => setOpenMenu(null), 120);
+  };
+  useEffect(() => setOpenMenu(null), [pathname]);
+  useEffect(() => cancelClose, []);
+
   return (
     <header
       className={cn(
@@ -59,10 +79,25 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
             {nav.map((item) => {
               const active = item.href !== "/" && pathname.startsWith(item.href.split("?")[0]!);
               return (
-                <li key={item.label} className="group/nav relative">
+                <li
+                  key={item.label}
+                  className="relative"
+                  onMouseEnter={() => (item.children?.length ? openNow(item.label) : setOpenMenu(null))}
+                  onMouseLeave={closeSoon}
+                  onFocus={() => item.children?.length && openNow(item.label)}
+                  onBlur={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) closeSoon();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setOpenMenu(null);
+                  }}
+                  onClick={() => setOpenMenu(null)}
+                >
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
+                    aria-haspopup={item.children?.length ? "true" : undefined}
+                    aria-expanded={item.children?.length ? openMenu === item.label : undefined}
                     className={cn(
                       "relative inline-flex h-11 items-center rounded-pill px-3 text-small font-semibold text-ink-muted transition-colors hover:text-ink lg:px-3.5",
                       active && "text-ink",
@@ -74,7 +109,15 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
                   </Link>
                   {!!item.children?.length && (
                     // UX: Hick's Law — ≤ 8 subcategories per category in the mega-menu.
-                    <div className="invisible absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 pt-2 opacity-0 transition-[opacity,visibility] duration-[var(--dur-fast)] ease-brand group-focus-within/nav:visible group-focus-within/nav:opacity-100 group-hover/nav:visible group-hover/nav:opacity-100">
+                    <div
+                      className={cn(
+                        "absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 pt-2",
+                        // Fade in only; hide instantly so two menus never overlap while switching.
+                        openMenu === item.label
+                          ? "visible opacity-100 transition-opacity duration-[var(--dur-fast)] ease-brand"
+                          : "invisible opacity-0",
+                      )}
+                    >
                       <ul className="rounded-card border border-border bg-surface p-2 shadow-3">
                         {item.children.map((child) => (
                           <li key={child.href}>
