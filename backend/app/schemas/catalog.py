@@ -183,6 +183,8 @@ class SubcategoryOut(ApiModel):
     name: str
     slug: str
     product_count: int
+    #: From sellers' own product photos; None until a seller lists a piece here.
+    cover_url: str | None
 
 
 class CategoryOut(ApiModel):
@@ -190,7 +192,10 @@ class CategoryOut(ApiModel):
     slug: str
     tagline: str | None
     product_count: int
-    cover_url: str
+    #: The most-wished (then newest) listed piece's photo; None when empty.
+    cover_url: str | None
+    #: Up to 4 photos from different sellers' pieces, for mosaic tiles.
+    cover_images: list[str]
     subcategories: list[SubcategoryOut]
 
 

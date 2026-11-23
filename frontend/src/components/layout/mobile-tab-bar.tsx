@@ -3,7 +3,9 @@
 import { Heart, House, Search, ShoppingBag, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
+import { useSession } from "@/lib/auth/session";
 import { useBagUi } from "@/lib/stores/bag-ui";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +25,9 @@ const tabs = [
 export function MobileTabBar() {
   const pathname = usePathname();
   const count = useBagUi((s) => s.count);
+  const { status } = useSession();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   return (
     <nav
@@ -30,10 +35,14 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-[var(--glass)] pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden"
     >
       <ul className="grid grid-cols-5">
-        {tabs.map(({ href, label, icon: Icon, match }) => {
+        {tabs.map(({ href: tabHref, label: tabLabel, icon: Icon, match }) => {
           const active = match(pathname);
+          // Signed out, the last tab says "Sign in" and goes straight to the form.
+          const guestTab = tabHref === "/account" && mounted && status === "guest";
+          const href = guestTab ? "/login" : tabHref;
+          const label = guestTab ? "Sign in" : tabLabel;
           return (
-            <li key={href}>
+            <li key={tabHref}>
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}

@@ -20,6 +20,9 @@ export type DropIn = ApiSchemas["DropIn"];
 export type StudioVoucher = ApiSchemas["StudioVoucher"];
 export type VoucherIn = ApiSchemas["VoucherIn"];
 export type StudioReview = ApiSchemas["StudioReview"];
+export type SellerPromotions = ApiSchemas["SellerPromotions"];
+export type SellerEntry = ApiSchemas["SellerEntry"];
+export type PromotionOut = ApiSchemas["PromotionOut"];
 
 const K = {
   app: ["seller-application"] as const,
@@ -33,6 +36,7 @@ const K = {
   drops: ["studio", "drops"] as const,
   vouchers: ["studio", "vouchers"] as const,
   reviews: ["studio", "reviews"] as const,
+  promotions: ["studio", "promotions"] as const,
 };
 
 /** openapi-fetch results → data or throw the API error envelope. */
@@ -270,4 +274,35 @@ export function useReply() {
       unwrap(api.PUT("/api/v1/seller/reviews/{review_id}/reply", { params: { path: { review_id: id } }, body: { reply } })),
     onSuccess: () => qc.invalidateQueries({ queryKey: K.reviews }),
   });
+}
+
+// ─── Sales (platform promotions) ───────────────────────────────────────────
+
+export function useSellerPromotions() {
+  const on = useAuthed();
+  return useQuery({ queryKey: K.promotions, enabled: on, queryFn: () => unwrap(api.GET("/api/v1/seller/promotions")) });
+}
+
+export function usePromotionEntries() {
+  const qc = useQueryClient();
+  const settle = () => {
+    qc.invalidateQueries({ queryKey: K.promotions });
+    qc.invalidateQueries({ queryKey: K.products });
+  };
+  const enroll = useMutation({
+    mutationFn: ({ id, product_ids, discount_percent }: { id: string; product_ids: string[]; discount_percent: number }) =>
+      unwrap(
+        api.POST("/api/v1/seller/promotions/{promotion_id}/entries", {
+          params: { path: { promotion_id: id } },
+          body: { product_ids, discount_percent },
+        }),
+      ),
+    onSuccess: settle,
+  });
+  const withdraw = useMutation({
+    mutationFn: (entryId: string) =>
+      unwrap(api.DELETE("/api/v1/seller/promotions/entries/{entry_id}", { params: { path: { entry_id: entryId } } })),
+    onSuccess: settle,
+  });
+  return { enroll, withdraw };
 }

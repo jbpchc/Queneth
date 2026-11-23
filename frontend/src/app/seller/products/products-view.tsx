@@ -58,9 +58,9 @@ export function ProductsView() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Catalog</p>
-          <h1 className="text-h1 text-ink">Products</h1>
+          <h1 className="text-h1 text-ink">My products</h1>
         </div>
-        <Button asChild variant="primary"><Link href="/seller/products/new"><Plus aria-hidden /> New piece</Link></Button>
+        <Button asChild variant="primary"><Link href="/seller/products/new"><Plus aria-hidden /> Add a product</Link></Button>
       </header>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -100,7 +100,7 @@ export function ProductsView() {
           icon={PackageOpen}
           title={q ? `Nothing matches “${q}”` : tab === "draft" ? "No drafts" : tab === "archived" ? "Nothing archived" : "No pieces yet"}
           description={q ? "Try another word from the title." : "Start the wizard to add your first piece. It saves as you go."}
-          action={!q ? <Button asChild variant="primary"><Link href="/seller/products/new">New piece</Link></Button> : undefined}
+          action={!q ? <Button asChild variant="primary"><Link href="/seller/products/new">Add a product</Link></Button> : undefined}
         />
       ) : (
         <Card className="overflow-x-auto">
@@ -110,7 +110,7 @@ export function ProductsView() {
                 <th className="w-12 px-4 py-3">
                   <Checkbox aria-label="Select all" checked={allOn} onCheckedChange={(v) => setSelected(v === true ? rows.map((r) => r.id) : [])} />
                 </th>
-                <th className="py-3 font-semibold">Piece</th>
+                <th className="py-3 font-semibold">Product</th>
                 <th className="py-3 font-semibold">Status</th>
                 <th className="py-3 text-right font-semibold">Price</th>
                 <th className="py-3 text-right font-semibold">Stock</th>

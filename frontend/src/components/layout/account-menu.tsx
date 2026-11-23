@@ -3,6 +3,7 @@
 import { Bell, LogOut, ShieldCheck, ShoppingBag, Store, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Avatar } from "@/components/ui/avatar";
@@ -30,14 +31,33 @@ export function AccountMenu({ className }: { className?: string }) {
   const logout = useLogout();
   const router = useRouter();
   const pathname = usePathname();
+  // Server HTML never knows the session; switch to the signed-out buttons after mount.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
+  if (mounted && status === "guest") {
+    // Signed out: say it in words, not just an icon (UX: recognition over recall).
+    return (
+      <div className={cn("grid-flow-col items-center gap-1", className)}>
+        <Link
+          href={`/login?next=${encodeURIComponent(pathname)}`}
+          className="inline-flex h-10 items-center whitespace-nowrap rounded-pill bg-ink px-4 text-small font-semibold text-bg transition-colors hover:bg-ink/85 xl:bg-transparent xl:px-3 xl:text-ink xl:hover:bg-surface-muted"
+        >
+          Sign in
+        </Link>
+        {/* Room for both only on wide screens; narrower, Sign in links on to sign-up. */}
+        <Link
+          href="/register"
+          className="hidden h-10 items-center whitespace-nowrap rounded-pill bg-ink px-4 text-small font-semibold text-bg transition-colors hover:bg-ink/85 xl:inline-flex"
+        >
+          Join free
+        </Link>
+      </div>
+    );
+  }
   if (status !== "authenticated" || !user) {
     return (
-      <Link
-        href={status === "loading" ? "/account" : `/login?next=${encodeURIComponent(pathname)}`}
-        aria-label="Sign in"
-        className={cn(iconLink, className)}
-      >
+      <Link href="/account" aria-label="Account" className={cn(iconLink, className)}>
         <User aria-hidden className="size-5" />
       </Link>
     );

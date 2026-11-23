@@ -40,28 +40,79 @@ Migrations run automatically when the `api` container starts. To run one by hand
 docker compose exec api alembic upgrade head
 ```
 
-### Demo accounts
+### Without Docker (SQLite)
 
-Seed them once (the command is idempotent, so re-running it is safe):
+No Postgres or Docker needed; data is kept in `backend/demo.db` between runs:
 
 ```bash
-docker compose exec api python -m app.seed
+cd backend && .venv/Scripts/python scripts/run_demo.py
+```
+
+```bash
+cd frontend && npm run dev
+```
+
+This starts a clean marketplace: categories and the admin account only, with no boutiques or products. Add `--demo` to also load the demo boutiques and catalog, `--brands` to add the Nike, Penshoppe and Bench stores (seller logins `nike@`, `penshoppe@`, `bench@queneth.test`, same password), or `--reset` to delete everything and start over.
+
+### Moving your store to another computer or a VM
+
+Your sellers, products and uploaded photos live in `backend/demo.db` and `backend/uploads/`, which Git ignores. `scripts/snapshot.py` packs them into `backend/snapshot/` so they travel with the repo.
+
+On this computer, after changing anything in the app:
+
+```bash
+cd backend && .venv/Scripts/python scripts/snapshot.py save
+git add backend/snapshot && git commit -m "Update store snapshot" && git push
+```
+
+On the other computer or VM (Python 3.12+ and Node 20+ installed):
+
+```bash
+git clone https://github.com/jbpchc/Queneth.git && cd Queneth/backend
+python -m venv .venv
+.venv/Scripts/python -m pip install -e ".[dev]"   # Linux/macOS: .venv/bin/python
+cp .env.example .env
+.venv/Scripts/python scripts/snapshot.py load      # add --force to replace an existing demo.db
+.venv/Scripts/python scripts/run_demo.py
+```
+
+```bash
+cd frontend && cp .env.example .env && npm install && npm run dev
+```
+
+Then open http://localhost:3000 inside that computer or VM and sign in with the same accounts.
+
+**Opening a VM's site from the host's browser:** use the VM's address (for example `192.168.56.10`) everywhere, *before* running `snapshot.py load` so photo links are rewritten:
+
+- `backend/.env`: `API_PUBLIC_URL=http://192.168.56.10:8000`, `FRONTEND_URL=http://192.168.56.10:3000`, `FRONTEND_ORIGINS=http://192.168.56.10:3000`
+- `frontend/.env`: `NEXT_PUBLIC_API_URL=http://192.168.56.10:8000/api/v1`, `NEXT_PUBLIC_SITE_URL=http://192.168.56.10:3000`
+- start with `run_demo.py --public` and `npm run dev -- -H 0.0.0.0`, and allow ports 3000 and 8000 through the VM's firewall.
+
+### Demo accounts
+
+Seed them once (the command is idempotent, so re-running it is safe). Without `--demo` only `admin@queneth.test` and the categories are created:
+
+```bash
+docker compose exec api python -m app.seed --demo
 ```
 
 | Email | Roles | Use it for |
 | --- | --- | --- |
 | `buyer@queneth.test` | Buyer | Isabela, a creative director, shopping |
-| `collector@queneth.test` | Buyer | Marco, a fragrance collector |
-| `seller@queneth.test` | Buyer + Seller | Atelier Lumen's Seller Studio |
+| `collector@queneth.test` | Buyer | Marco, a fragrance collector with an order in every status |
 | `admin@queneth.test` | Admin | The Control Room (seeded only, never self-registered) |
-
-Demo vouchers (one per boutique, once per shopper): `LUMEN10` (10% off Atelier Lumen from 3,000 QC), `OBRA500` (500 QC off Obra Leather from 5,000 QC), `NOCTURNE15` (15% off Nocturne Parfums from 4,000 QC), `ILAYA-SUN` (1,000 QC off Casa Ilaya from 8,000 QC). `buyer@` has Home (Makati) and Office (Naga) addresses saved. `collector@` (Marco) has an order in every status. Other boutique sellers: `obra@`, `ilaya@`, `kintsu@`, `nocturne@`, `solenne@`, `sable@` and `verde@queneth.test` (same password).
-| `verde@` · `sable@` · `nocturne@` · `ilaya@` · `obra@` · `kintsu@` · `solenne@queneth.test` | Buyer + Seller | The other seven boutiques |
+| `verde@` · `sable@` · `nocturne@` · `ilaya@` · `obra@` · `kintsu@` · `solenne@queneth.test` | Buyer + Seller | The seven demo boutiques' Seller Studios |
 | `ana@` · `rafael@` · `bea@` · `mika@` · `jo@` · `lia@queneth.test` | Buyer | Reviewers in the seed |
 
 Password for all accounts: `Queneth#2026`. QueWallet PIN for every shopper and seller: `123456`. Each starts with the 50,000 QC welcome grant (posted through the ledger), and the codes `QUE-DEMO-5000` and `QUE-WELCOME-1000` can be redeemed on the wallet page.
 
-The same command seeds the catalog: 5 categories, 8 fictional boutiques, 124 products (801 variants, generated artwork), 60 reviews, 3 editorial collections and 3 drops (one live, two scheduled). Re-running it changes nothing.
+Demo vouchers (one per boutique, once per shopper): `OBRA500` (500 QC off Obra Leather from 5,000 QC), `NOCTURNE15` (15% off Nocturne Parfums from 4,000 QC), `ILAYA-SUN` (1,000 QC off Casa Ilaya from 8,000 QC). `buyer@` has Home (Makati) and Office (Naga) addresses saved.
+
+**Sales:** admins schedule platform sales under **Control Room → Promotions**; boutiques enter pieces under **Seller Studio → Sales**. Shoppers see them on the home page and at `/deals`.
+
+**Your own boutique:** register a new account, apply at **Account → Sell on Queneth** (`/account/sell`), then sign in as `admin@queneth.test` and approve it under **Control Room → Sellers**. Sign back in to your account and open Seller Studio to add pieces.
+
+With `--demo` the same command seeds the catalog: 5 categories, 7 fictional boutiques, 124 products (curated Unsplash photos with generated-art fallback), 60 reviews, 3 editorial collections and 3 drops (one live, two scheduled). Re-running it changes nothing.
 
 ### External APIs
 
@@ -114,7 +165,7 @@ npm run dev
 | Task | Command |
 | --- | --- |
 | Backend tests | `cd backend && python -m pytest`. Uses `TEST_DATABASE_URL` (Postgres) when it's reachable, otherwise in-memory SQLite; Postgres-only tests are then skipped |
-| Seed demo data | `cd backend && python -m app.seed` |
+| Seed | `cd backend && python -m app.seed` (clean marketplace) or `python -m app.seed --demo` (demo boutiques and catalog) |
 | Wallet reconciliation | `cd backend && python -m app.scripts.reconcile` (exit 0 = zero drift) |
 | Backend lint | `cd backend && python -m ruff check .` |
 | New migration | `cd backend && python -m alembic revision --autogenerate -m "add products"` |

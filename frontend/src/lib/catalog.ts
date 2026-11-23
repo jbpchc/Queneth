@@ -13,6 +13,8 @@ export type Boutique = ApiSchemas["BoutiqueDetail"];
 export type BoutiqueCard = ApiSchemas["BoutiqueCard"];
 export type Collection = ApiSchemas["CollectionOut"];
 export type Drop = ApiSchemas["DropOut"];
+export type Deals = ApiSchemas["DealsOut"];
+export type PromotionCard = ApiSchemas["PromotionCard"];
 
 /** Thrown into the nearest error.tsx when the API is down (not a 404). */
 export class CatalogUnavailable extends Error {}
@@ -63,6 +65,32 @@ export async function getCollection(slug: string) {
   return unwrap(
     await createServerApi().GET("/api/v1/catalog/collections/{slug}", { params: { path: { slug } } }),
   );
+}
+
+/** Live sales and marked-down pieces. Never fatal: the home page renders without them. */
+export async function getDeals(): Promise<Deals> {
+  try {
+    const res = await createServerApi().GET("/api/v1/catalog/deals");
+    return res.data ?? { promotions: [], on_sale: [] };
+  } catch {
+    return { promotions: [], on_sale: [] };
+  }
+}
+
+export async function getPromotion(slug: string) {
+  return unwrap(
+    await createServerApi().GET("/api/v1/catalog/promotions/{slug}", { params: { path: { slug } } }),
+  );
+}
+
+/** Categories for the header. Never fatal: the header falls back to fixed links. */
+export async function getNavCategories(): Promise<Category[]> {
+  try {
+    const res = await createServerApi().GET("/api/v1/catalog/categories");
+    return res.data ?? [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getDrops() {

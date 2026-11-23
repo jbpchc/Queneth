@@ -199,15 +199,6 @@ INTERIORS = [
     "1776813122119-c23f1e436098",
 ]
 
-#: Category covers: one representative photo per category.
-CATEGORY_PHOTOS = {
-    "clothing": "1704775990154-b87562565d4c",
-    "shoes": "1573100925118-870b8efc799d",
-    "bags": "1624687943971-e86af76d57de",
-    "accessories": "1617038220319-276d3cfab638",
-    "perfumes": "1588405748880-12d1d2a59f75",
-}
-
 
 def photo(photo_id: str, *, ratio: str = "4:5", fallback: str | None = None) -> str:
     """CDN URL cropped to `ratio`; the image loader adds width/quality/format."""
@@ -227,7 +218,7 @@ def product_photos(subcategory: str, index: int, count: int = 3) -> list[str]:
 
 def all_photo_ids() -> list[str]:
     ids = [p for pool in SUBCATEGORY_PHOTOS.values() for p in pool]
-    return list(dict.fromkeys([*ids, *INTERIORS, *CATEGORY_PHOTOS.values()]))
+    return list(dict.fromkeys([*ids, *INTERIORS]))
 
 
 # ─── Seed step ─────────────────────────────────────────────────────────────

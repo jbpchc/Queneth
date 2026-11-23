@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Manrope } from "next/font/google";
+import { Fraunces, Inter, Manrope } from "next/font/google";
 import type { ReactNode } from "react";
 
 import { SkipLink } from "@/components/layout/skip-link";
@@ -26,6 +26,14 @@ const manrope = Manrope({
   variable: "--font-manrope",
 });
 
+// Workspace font for Seller Studio and the Control Room: neutral, highly legible
+// at small sizes, with tabular figures for numbers in tables.
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
 export const metadata: Metadata = {
@@ -49,7 +57,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${manrope.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${manrope.variable} ${inter.variable}`}>
       <body>
         <ImageFallback />
         <ThemeProvider>

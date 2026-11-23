@@ -1,16 +1,18 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Store } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
 import { Countdown } from "@/components/catalog/countdown";
 import { FollowButton } from "@/components/catalog/follow-button";
+import { GuestWelcome } from "@/components/catalog/guest-welcome";
 import { NotifyToggle } from "@/components/catalog/notify-toggle";
 import { ProductCard } from "@/components/catalog/product-card";
 import { ProductRail } from "@/components/catalog/product-rail";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getHome, type Category, type HomeData } from "@/lib/catalog";
+import { EmptyState } from "@/components/ui/states";
+import { getDeals, getHome, type Category, type Deals, type HomeData } from "@/lib/catalog";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -22,10 +24,16 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const home = await getHome();
+  const [home, deals] = await Promise.all([getHome(), getDeals()]);
+  // Everything below comes from boutiques' own listings: with none yet, the
+  // page says so instead of showing placeholder merchandise.
+  const pieces = home.categories.reduce((n, c) => n + c.product_count, 0);
+  if (pieces === 0) return <OpeningSoon categories={home.categories} />;
   return (
     <div className="flex flex-col gap-20 pb-8 md:gap-28">
       <Hero home={home} />
+      <GuestWelcome />
+      <DealsSection deals={deals} />
       <CategoryBento categories={home.categories} />
       <ProductRail kicker="Curated for you" title="Chosen this week" href="/search?sort=curated" cards={home.curated} />
       {home.editorial && <EditorialBand collection={home.editorial} />}
@@ -39,7 +47,10 @@ export default async function HomePage() {
 
 function Hero({ home }: { home: HomeData }) {
   const drop = home.live_drop;
-  const images = drop?.products.flatMap((p) => (p.image ? [p.image] : [])).slice(0, 3) ?? [];
+  // Collage: the live drop's pieces, else the top piece from each category.
+  const images = drop
+    ? drop.products.flatMap((p) => (p.image ? [p.image] : [])).slice(0, 3)
+    : home.categories.flatMap((c) => (c.cover_url ? [{ url: c.cover_url, alt: "" }] : [])).slice(0, 3);
   return (
     <section className="grain overflow-hidden border-b border-border">
       <div className="relative z-[2] mx-auto grid max-w-[1536px] items-center gap-10 px-4 pb-14 pt-10 sm:px-6 md:grid-cols-12 md:pb-20 md:pt-16 lg:px-10">
@@ -69,6 +80,9 @@ function Hero({ home }: { home: HomeData }) {
             </>
           ) : (
             <>
+              <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">
+                {home.categories.reduce((n, c) => n + c.product_count, 0)} pieces from independent boutiques
+              </p>
               <h1 className="text-display text-ink">
                 Curated for the <em className="italic text-accent">connoisseur.</em>
               </h1>
@@ -119,28 +133,158 @@ function CategoryBento({ categories }: { categories: Category[] }) {
           <li key={c.slug} className={cn(layout[i], i === 0 && "col-span-2 row-span-2")}>
             <Link
               href={`/c/${c.slug}`}
-              className="group relative flex h-full flex-col justify-end overflow-hidden rounded-card bg-surface-muted p-5 shadow-1 transition-shadow hover:shadow-2"
+              className={cn(
+                "group relative flex h-full flex-col justify-end overflow-hidden rounded-card p-5 shadow-1 transition-shadow hover:shadow-2",
+                c.cover_url ? "bg-surface-muted" : "bg-ink",
+              )}
             >
-              <Image
-                src={c.cover_url}
-                alt=""
-                fill
-                sizes={i === 0 ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 25vw, 50vw"}
-                className="object-cover transition-transform duration-[var(--dur-base)] ease-brand motion-safe:group-hover:scale-[1.03]"
-              />
+              {/* Cover = the most-wished in-stock piece boutiques have tagged into this
+                  category; the large tile shows a mosaic from up to four boutiques. */}
+              <CategoryCover category={c} large={i === 0} />
               <span className="absolute inset-0 bg-gradient-to-t from-[rgb(20_18_20/0.55)] via-transparent to-transparent" />
               <span className="relative z-[1] flex items-end justify-between gap-3 text-[#faf7f2]">
                 <span className="flex flex-col">
                   <span className={cn("font-display", i === 0 ? "text-h1" : "text-h3")}>{c.name}</span>
                   {i === 0 && c.tagline && <span className="text-small opacity-90">{c.tagline}</span>}
                 </span>
-                <span className="tabular text-caption font-semibold opacity-90">{c.product_count} pieces</span>
+                <span className="tabular text-caption font-semibold opacity-90">
+                  {c.product_count > 0 ? `${c.product_count} ${c.product_count === 1 ? "piece" : "pieces"}` : "Coming soon"}
+                </span>
               </span>
             </Link>
           </li>
         ))}
       </ul>
     </section>
+  );
+}
+
+function CategoryCover({ category: c, large }: { category: Category; large: boolean }) {
+  const sizes = large ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 25vw, 50vw";
+  const zoom =
+    "object-cover transition-transform duration-[var(--dur-base)] ease-brand motion-safe:group-hover:scale-[1.03]";
+  if (large && c.cover_images.length >= 4) {
+    return (
+      <span className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-0.5">
+        {c.cover_images.slice(0, 4).map((url) => (
+          <span key={url} className="relative overflow-hidden">
+            <Image src={url} alt="" fill sizes="(min-width: 768px) 25vw, 50vw" className={zoom} />
+          </span>
+        ))}
+      </span>
+    );
+  }
+  // No tagged pieces yet: a quiet textured tile instead of stock imagery.
+  if (!c.cover_url) return <span aria-hidden className="grain absolute inset-0 opacity-60" />;
+  return <Image src={c.cover_url} alt="" fill sizes={sizes} className={zoom} />;
+}
+
+/** Live platform sales and pieces boutiques have marked down. Hidden when nothing is on sale. */
+function DealsSection({ deals }: { deals: Deals }) {
+  if (!deals.promotions.length && !deals.on_sale.length) return null;
+  return (
+    <div className="flex flex-col gap-10">
+      {deals.promotions.slice(0, 2).map((p) => (
+        <section
+          key={p.id}
+          aria-labelledby={`promo-${p.slug}`}
+          className="mx-auto w-full max-w-[1536px] px-4 sm:px-6 lg:px-10"
+        >
+          <div className="grid overflow-hidden rounded-card bg-ink text-bg md:grid-cols-12">
+            <div className="flex flex-col gap-4 p-8 md:col-span-5 md:p-12">
+              <Badge tone="citrus" withIcon={false} className="self-start">
+                {p.badge}
+              </Badge>
+              <h2 id={`promo-${p.slug}`} className="text-h1">
+                {p.title}
+              </h2>
+              {p.description && <p className="max-w-measure opacity-80">{p.description}</p>}
+              <p className="text-small font-semibold">
+                Up to {p.top_discount_percent}% off · {p.seller_count}{" "}
+                {p.seller_count === 1 ? "boutique" : "boutiques"}
+              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                {/* UX: Von Restorff effect — one accent CTA per sale banner. */}
+                <Button asChild variant="primary" size="lg">
+                  <Link href={`/deals/${p.slug}`}>
+                    Shop the sale <ArrowRight aria-hidden />
+                  </Link>
+                </Button>
+                <div className="flex flex-col gap-1">
+                  <span className="text-caption font-bold uppercase tracking-[0.14em] opacity-70">Ends in</span>
+                  <Countdown to={p.ends_at} />
+                </div>
+              </div>
+            </div>
+            <ul className="grid grid-cols-2 gap-0.5 md:col-span-7 md:grid-cols-4">
+              {p.preview.slice(0, 4).map((card) => (
+                <li key={card.id} className="relative aspect-[4/5] md:aspect-auto">
+                  <Link href={`/p/${card.slug}`} aria-label={card.title} className="absolute inset-0">
+                    {card.image && (
+                      <Image
+                        src={card.image.url}
+                        alt={card.image.alt}
+                        fill
+                        sizes="(min-width: 768px) 15vw, 50vw"
+                        className="object-cover"
+                      />
+                    )}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ))}
+      <ProductRail
+        kicker="Marked down by our boutiques"
+        title="On sale now"
+        href="/deals"
+        cards={deals.on_sale.slice(0, 12)}
+      />
+    </div>
+  );
+}
+
+/** A marketplace with no listings yet: an honest empty state, not placeholder stock. */
+function OpeningSoon({ categories }: { categories: Category[] }) {
+  return (
+    <div className="mx-auto flex w-full max-w-[1536px] flex-col gap-12 px-4 py-16 sm:px-6 md:py-24 lg:px-10">
+      <EmptyState
+        icon={Store}
+        title="Our boutiques are setting up"
+        description="Queneth is a marketplace of independent boutiques. Pieces appear here as soon as a boutique publishes them."
+        action={
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button asChild variant="primary">
+              <Link href="/account/sell">Sell on Queneth</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/boutiques">See boutiques</Link>
+            </Button>
+          </div>
+        }
+      />
+      {categories.length > 0 && (
+        <section aria-labelledby="coming" className="flex flex-col gap-4">
+          <h2 id="coming" className="text-h3 text-ink">
+            What boutiques can list
+          </h2>
+          <ul className="flex flex-wrap gap-2">
+            {categories.map((c) => (
+              <li key={c.slug}>
+                <Link
+                  href={`/c/${c.slug}`}
+                  className="inline-flex min-h-11 items-center rounded-pill border border-border-strong px-4 text-small font-semibold text-ink hover:bg-surface-muted"
+                >
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
   );
 }
 
@@ -197,6 +341,7 @@ function UpcomingDrop({ drop }: { drop: NonNullable<HomeData["upcoming_drop"]> }
 }
 
 function FeaturedBoutiques({ boutiques }: { boutiques: HomeData["featured_boutiques"] }) {
+  if (!boutiques.length) return null;
   return (
     <section aria-labelledby="boutiques-title" className="mx-auto w-full max-w-[1536px] px-4 sm:px-6 lg:px-10">
       <div className="mb-6 flex items-end justify-between gap-4">

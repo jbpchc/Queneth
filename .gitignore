@@ -21,6 +21,7 @@ next-env.d.ts
 .env.local
 backend/uploads/
 backend/openapi.json
+backend/demo.db
 
 # OS / editor
 .DS_Store

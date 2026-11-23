@@ -47,12 +47,6 @@ RETURN_POLICY = (
 )
 
 BOUTIQUES: list[Boutique] = [
-    Boutique("atelier-lumen", "Atelier Lumen", "seller@queneth.test", "Atelier Lumen", "Manila",
-             "Quiet luxury, cut in Manila.",
-             "Atelier Lumen makes pared-back wardrobes in natural fibers: bias-cut silks, honest cottons, "
-             "and knits that soften with every wear. Every piece is cut and finished in our Ermita studio.",
-             "b08457", "AL", "dress", ("Lumen Atelier", "Halden Studio"),
-             ("dresses", "tops", "knitwear", "scarves"), True),
     Boutique("maison-verde", "Maison Verdé", "verde@queneth.test", "Maison Verdé", "Cebu",
              "Tailoring with a coastal ease.",
              "Maison Verdé brings Savile Row discipline to island weather: half-canvassed jackets, "
@@ -64,7 +58,7 @@ BOUTIQUES: list[Boutique] = [
              "A knit studio obsessed with gauge and hand-feel. We source cashmere and merino from "
              "certified mills and finish every seam by hand-linking.",
              "e8b4b8", "S&T", "knit", ("Sable & Thread", "Kaia Knits"),
-             ("knitwear", "scarves", "hats", "tops")),
+             ("dresses", "knitwear", "scarves", "hats", "tops")),
     Boutique("nocturne-parfums", "Nocturne Parfums", "nocturne@queneth.test", "Nocturne Parfums", "Taguig",
              "Niche perfumery after dark.",
              "Nocturne composes small-batch fragrances around Philippine botanicals: sampaguita, "

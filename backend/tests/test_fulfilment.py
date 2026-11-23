@@ -36,14 +36,14 @@ from tests.test_checkout import (
     variant_from,
 )
 
-SELLER = "seller@queneth.test"  # owns Atelier Lumen
+SELLER = "nocturne@queneth.test"  # owns Nocturne Parfums
 SELLER_OPS = "/api/v1/seller/orders"
 
 
 async def bought(client, db, *, voucher: str | None = None, qty: int = 1) -> dict:
-    """Buyer checks out one Atelier Lumen piece; returns the order JSON."""
+    """Buyer checks out one Nocturne Parfums piece; returns the order JSON."""
     await login(client, BUYER)
-    await add(client, await variant_from(db, "atelier-lumen", min_price=3_000), qty)
+    await add(client, await variant_from(db, "nocturne-parfums", min_price=4_000), qty)
     bag = (await client.get(CART)).json()
     if voucher:
         bag = (await client.post(f"{CART}/vouchers", json={"code": voucher})).json()
@@ -167,9 +167,9 @@ async def test_full_journey_releases_escrow_and_awards_points(client, shop):
 
 
 async def test_buyer_cancel_refunds_restores_stock_and_frees_voucher(client, shop):
-    order = await bought(client, shop, voucher="LUMEN10")
+    order = await bought(client, shop, voucher="NOCTURNE15")
     sub = order["sub_orders"][0]
-    variant = await variant_from(shop, "atelier-lumen", min_price=3_000)
+    variant = await variant_from(shop, "nocturne-parfums", min_price=4_000)
     stock_after_buy = await shop.scalar(
         select(Variant.stock)
         .where(Variant.id == variant.id)
@@ -192,7 +192,9 @@ async def test_buyer_cancel_refunds_restores_stock_and_frees_voucher(client, sho
     )
     assert p.total_stock >= v.stock
     voucher = await shop.scalar(
-        select(Voucher).where(Voucher.code == "LUMEN10").execution_options(populate_existing=True)
+        select(Voucher)
+        .where(Voucher.code == "NOCTURNE15")
+        .execution_options(populate_existing=True)
     )
     assert voucher.used_count == 0
     assert await shop.scalar(select(func.count()).select_from(VoucherRedemption)) == 0

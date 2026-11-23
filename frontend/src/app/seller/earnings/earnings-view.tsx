@@ -41,7 +41,7 @@ export function EarningsView() {
     <div className="flex flex-col gap-8">
       <header className="flex flex-col gap-2">
         <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Earnings</p>
-        <h1 className="text-h1 text-ink">Your QueWallet earnings</h1>
+        <h1 className="text-h1 text-ink">Earnings</h1>
       </header>
 
       <div className="grid gap-4 md:grid-cols-2">

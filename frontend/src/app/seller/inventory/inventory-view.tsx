@@ -49,7 +49,7 @@ export function InventoryView() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Stock</p>
-          <h1 className="text-h1 text-ink">Inventory</h1>
+          <h1 className="text-h1 text-ink">Stock</h1>
         </div>
         <label className="flex min-h-11 items-center gap-3 text-small font-semibold text-ink">
           <Switch checked={low} onCheckedChange={(v) => setLow(v === true)} />
@@ -66,14 +66,14 @@ export function InventoryView() {
           icon={Boxes}
           title={low ? "Nothing is running low" : "No variants yet"}
           description={low ? "Every live variant is above its alert level." : "Variants appear here once you add a piece."}
-          action={!low ? <Button asChild variant="primary"><Link href="/seller/products/new">New piece</Link></Button> : undefined}
+          action={!low ? <Button asChild variant="primary"><Link href="/seller/products/new">Add a product</Link></Button> : undefined}
         />
       ) : (
         <Card className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-small">
             <thead className="border-b border-border text-left text-ink-muted">
               <tr>
-                <th className="px-4 py-3 font-semibold">Piece</th>
+                <th className="px-4 py-3 font-semibold">Product</th>
                 <th className="py-3 font-semibold">SKU</th>
                 <th className="py-3 text-right font-semibold">Price</th>
                 <th className="w-28 py-3 text-right font-semibold">Stock</th>

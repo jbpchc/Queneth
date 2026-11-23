@@ -9,7 +9,7 @@ import { SearchBox } from "@/components/catalog/search-box";
 
 import { useHotkey } from "@/hooks/use-hotkey";
 import { useScrolled } from "@/hooks/use-scrolled";
-import { primaryNav } from "@/lib/nav";
+import type { NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
 
 import { AccountMenu } from "./account-menu";
@@ -23,8 +23,9 @@ const iconLink =
 /**
  * Frosted-glass sticky header that shrinks on scroll.
  * UX: Jakob's Law — logo top-left, search in the header, bag top-right.
+ * The nav comes from the live taxonomy (built server-side in the layout).
  */
-export function SiteHeader() {
+export function SiteHeader({ nav }: { nav: NavItem[] }) {
   const scrolled = useScrolled();
   const pathname = usePathname();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -55,7 +56,7 @@ export function SiteHeader() {
 
         <nav aria-label="Primary" className="hidden flex-1 justify-center md:flex">
           <ul className="flex items-center gap-0.5 lg:gap-1">
-            {primaryNav.map((item) => {
+            {nav.map((item) => {
               const active = item.href !== "/" && pathname.startsWith(item.href.split("?")[0]!);
               return (
                 <li key={item.label} className="group/nav relative">
@@ -66,11 +67,12 @@ export function SiteHeader() {
                       "relative inline-flex h-11 items-center rounded-pill px-3 text-small font-semibold text-ink-muted transition-colors hover:text-ink lg:px-3.5",
                       active && "text-ink",
                       item.label === "New" && "text-ink",
+                      item.href === "/deals" && "text-accent",
                     )}
                   >
                     {item.label}
                   </Link>
-                  {item.children && (
+                  {!!item.children?.length && (
                     // UX: Hick's Law — ≤ 8 subcategories per category in the mega-menu.
                     <div className="invisible absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 pt-2 opacity-0 transition-[opacity,visibility] duration-[var(--dur-fast)] ease-brand group-focus-within/nav:visible group-focus-within/nav:opacity-100 group-hover/nav:visible group-hover/nav:opacity-100">
                       <ul className="rounded-card border border-border bg-surface p-2 shadow-3">

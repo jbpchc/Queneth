@@ -1,41 +1,35 @@
+"""Seed the database.
+
+    python -m app.seed          # base only: taxonomy, admin, system wallets
+    python -m app.seed --demo   # plus the demo marketplace (7 boutiques, 124 pieces …)
+    python -m app.seed --brands # plus Nike, Penshoppe and Bench with their pieces
+
+Both are idempotent: re-running only adds what's missing.
+"""
+
 import asyncio
+import sys
 
 from app.db.session import SessionLocal, engine
-from app.seed.catalog import seed_catalog
-from app.seed.commerce import seed_commerce
-from app.seed.orders import seed_orders
-from app.seed.photos import apply_photos
-from app.seed.users import seed_users
-from app.seed.wallet import seed_wallets
+from app.seed.base import seed_base
+from app.seed.brand_sellers import seed_brand_sellers
+from app.seed.demo import seed_demo
 
 
-async def main() -> None:
+async def main(demo: bool, brands: bool = False) -> None:
     async with SessionLocal() as session:
-        created = await seed_users(session)
+        base = await seed_base(session)
         print(
-            f"Users: {len(created)} created"
-            + (f" ({', '.join(created)})" if created else " (all present)")
+            f"Base: {base['categories']} categories, admin {'created' if base['admins'] else 'present'}"
         )
-        catalog = await seed_catalog(session)
-        if catalog["products"]:
-            print(
-                f"Catalog: {catalog['products']} products, {catalog['reviews']} reviews, 3 collections, 3 drops"
-            )
+        if demo:
+            await seed_demo(session)
         else:
-            print("Catalog: already seeded (nothing to do)")
-        photos = await apply_photos(session)
-        print(
-            f"Photos: {photos['products']} products, {photos['banners']} banners, "
-            f"{photos['heroes']} collection/drop heroes (Unsplash, SVG fallback)"
-        )
-        wallets = await seed_wallets(session)
-        print(f"Wallets: {wallets['funded']} funded with the welcome grant; demo PIN 123456")
-        commerce = await seed_commerce(session)
-        print(f"Commerce: {commerce['vouchers']} vouchers, {commerce['addresses']} addresses")
-        orders = await seed_orders(session)
-        print(f"Orders: {orders} for collector@queneth.test (one in every status)")
+            print("No demo data (run with --demo to add the demo marketplace).")
+        if brands:
+            print("Brand sellers:", await seed_brand_sellers(session))
     await engine.dispose()
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main("--demo" in sys.argv, "--brands" in sys.argv))

@@ -2238,6 +2238,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/deals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Live sales and marked-down pieces */
+        get: operations["deals_api_v1_catalog_deals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/promotions/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One live sale and its pieces */
+        get: operations["promotion_api_v1_catalog_promotions__slug__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seller/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open sales and your entries */
+        get: operations["seller_promotions_api_v1_seller_promotions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seller/promotions/{promotion_id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Put pieces in a sale at a discount */
+        post: operations["enroll_api_v1_seller_promotions__promotion_id__entries_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seller/promotions/entries/{entry_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take a piece out of a sale (its price is restored) */
+        delete: operations["withdraw_api_v1_seller_promotions_entries__entry_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every campaign */
+        get: operations["list_promotions_api_v1_admin_promotions_get"];
+        put?: never;
+        /** New campaign */
+        post: operations["create_promotion_api_v1_admin_promotions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions/{promotion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a campaign */
+        put: operations["update_promotion_api_v1_admin_promotions__promotion_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/promotions/{promotion_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Call a campaign off (live prices are restored) */
+        post: operations["cancel_promotion_api_v1_admin_promotions__promotion_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2934,7 +3071,9 @@ export interface components {
             /** Product Count */
             product_count: number;
             /** Cover Url */
-            cover_url: string;
+            cover_url: string | null;
+            /** Cover Images */
+            cover_images: string[];
             /** Subcategories */
             subcategories: components["schemas"]["SubcategoryOut"][];
         };
@@ -3229,6 +3368,13 @@ export interface components {
             /** Orders */
             orders: number;
         };
+        /** DealsOut */
+        DealsOut: {
+            /** Promotions */
+            promotions: components["schemas"]["PromotionCard"][];
+            /** On Sale */
+            on_sale: components["schemas"]["ProductCard"][];
+        };
         /** Decision */
         Decision: {
             /** Reason */
@@ -3377,6 +3523,13 @@ export interface components {
             html: string;
             /** Text */
             text: string;
+        };
+        /** EnrollIn */
+        EnrollIn: {
+            /** Product Ids */
+            product_ids: string[];
+            /** Discount Percent */
+            discount_percent: number;
         };
         /** EntryOut */
         EntryOut: {
@@ -4094,11 +4247,8 @@ export interface components {
         ProductBasics: {
             /** Title */
             title: string;
-            /**
-             * Brand
-             * @description Existing brand name, or a new one.
-             */
-            brand: string;
+            /** Brand */
+            brand?: string | null;
             /**
              * Category
              * @example perfumes
@@ -4262,6 +4412,185 @@ export interface components {
             images?: components["schemas"]["ImageIn"][] | null;
             /** Variants */
             variants?: components["schemas"]["VariantIn"][] | null;
+        };
+        /**
+         * PromotionCard
+         * @description A campaign as shoppers see it: only pieces actually on sale now.
+         */
+        PromotionCard: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Badge */
+            badge: string;
+            /** Description */
+            description: string | null;
+            /** Hero Url */
+            hero_url: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Min Discount Percent */
+            min_discount_percent: number;
+            /** Max Discount Percent */
+            max_discount_percent: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "upcoming" | "live" | "ended" | "cancelled";
+            /** Product Count */
+            product_count: number;
+            /** Seller Count */
+            seller_count: number;
+            /** Preview */
+            preview: components["schemas"]["ProductCard"][];
+            /** Top Discount Percent */
+            top_discount_percent: number;
+        };
+        /** PromotionDetail */
+        PromotionDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Badge */
+            badge: string;
+            /** Description */
+            description: string | null;
+            /** Hero Url */
+            hero_url: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Min Discount Percent */
+            min_discount_percent: number;
+            /** Max Discount Percent */
+            max_discount_percent: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "upcoming" | "live" | "ended" | "cancelled";
+            /** Product Count */
+            product_count: number;
+            /** Seller Count */
+            seller_count: number;
+            /** Preview */
+            preview: components["schemas"]["ProductCard"][];
+            /** Top Discount Percent */
+            top_discount_percent: number;
+            /** Products */
+            products: components["schemas"]["ProductCard"][];
+        };
+        /** PromotionIn */
+        PromotionIn: {
+            /**
+             * Title
+             * @example End of the Year Sale
+             */
+            title: string;
+            /**
+             * Badge
+             * @example Year-End Sale
+             */
+            badge: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /**
+             * Min Discount Percent
+             * @default 5
+             */
+            min_discount_percent?: number;
+            /**
+             * Max Discount Percent
+             * @default 70
+             */
+            max_discount_percent?: number;
+            /** Hero Asset Id */
+            hero_asset_id?: string | null;
+        };
+        /** PromotionOut */
+        PromotionOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Slug */
+            slug: string;
+            /** Title */
+            title: string;
+            /** Badge */
+            badge: string;
+            /** Description */
+            description: string | null;
+            /** Hero Url */
+            hero_url: string | null;
+            /**
+             * Starts At
+             * Format: date-time
+             */
+            starts_at: string;
+            /**
+             * Ends At
+             * Format: date-time
+             */
+            ends_at: string;
+            /** Min Discount Percent */
+            min_discount_percent: number;
+            /** Max Discount Percent */
+            max_discount_percent: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "upcoming" | "live" | "ended" | "cancelled";
+            /** Product Count */
+            product_count: number;
+            /** Seller Count */
+            seller_count: number;
         };
         /** ReasonIn */
         ReasonIn: {
@@ -4539,6 +4868,53 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+        };
+        /** SellerEntry */
+        SellerEntry: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Promotion Id
+             * Format: uuid
+             */
+            promotion_id: string;
+            /** Promotion Title */
+            promotion_title: string;
+            /**
+             * Promotion State
+             * @enum {string}
+             */
+            promotion_state: "upcoming" | "live" | "ended" | "cancelled";
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Title */
+            product_title: string;
+            /** Image */
+            image: string | null;
+            /** Discount Percent */
+            discount_percent: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "scheduled" | "live" | "ended" | "withdrawn";
+            /** Price Qc */
+            price_qc: number;
+            /** Sale Price Qc */
+            sale_price_qc: number;
+        };
+        /** SellerPromotions */
+        SellerPromotions: {
+            /** Open */
+            open: components["schemas"]["PromotionOut"][];
+            /** Entries */
+            entries: components["schemas"]["SellerEntry"][];
         };
         /** SellerQueue */
         SellerQueue: {
@@ -4951,6 +5327,8 @@ export interface components {
             slug: string;
             /** Product Count */
             product_count: number;
+            /** Cover Url */
+            cover_url: string | null;
         };
         /** SubcategoryPatch */
         SubcategoryPatch: {
@@ -5192,7 +5570,7 @@ export interface components {
         VoucherApply: {
             /**
              * Code
-             * @example LUMEN10
+             * @example NOCTURNE15
              */
             code: string;
         };
@@ -15722,6 +16100,609 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ReportAck"];
                 };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    deals_api_v1_catalog_deals_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DealsOut"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    promotion_api_v1_catalog_promotions__slug__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionDetail"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    seller_promotions_api_v1_seller_promotions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SellerPromotions"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    enroll_api_v1_seller_promotions__promotion_id__entries_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                promotion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnrollIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SellerPromotions"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    withdraw_api_v1_seller_promotions_entries__entry_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    list_promotions_api_v1_admin_promotions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionOut"][];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    create_promotion_api_v1_admin_promotions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionOut"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    update_promotion_api_v1_admin_promotions__promotion_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                promotion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionOut"];
+                };
+            };
+            /** @description Bad request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not signed in */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not allowed */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    cancel_promotion_api_v1_admin_promotions__promotion_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                promotion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad request */
             400: {

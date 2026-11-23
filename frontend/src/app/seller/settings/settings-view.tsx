@@ -86,7 +86,7 @@ function SettingsForm({ s }: { s: BoutiqueSettings }) {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Settings</p>
-          <h1 className="text-h1 text-ink">{s.boutique_name}</h1>
+          <h1 className="text-h1 text-ink">Store settings</h1>
         </div>
         <Button asChild variant="outline"><Link href={`/b/${s.slug}`} target="_blank">View storefront <ExternalLink aria-hidden /></Link></Button>
       </header>

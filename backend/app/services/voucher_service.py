@@ -21,7 +21,7 @@ from app.schemas.commerce import AppliedVoucher
 
 
 def normalize(code: str) -> str:
-    """UX: Postel's Law — ' lumen10 ' finds LUMEN10."""
+    """UX: Postel's Law — ' nocturne15 ' finds NOCTURNE15."""
     return "".join(code.split()).upper()
 
 

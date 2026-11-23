@@ -40,7 +40,7 @@ export function DropsView() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Anticipation</p>
-          <h1 className="text-h1 text-ink">Drops</h1>
+          <h1 className="text-h1 text-ink">Product launches</h1>
         </div>
         {editing === null && <Button variant="primary" onClick={() => setEditing("new")}><Plus aria-hidden /> Schedule a drop</Button>}
       </header>

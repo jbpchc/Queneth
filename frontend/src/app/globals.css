@@ -259,3 +259,40 @@
     display: none;
   }
 }
+
+/*
+ * Workspace typography (Seller Studio and Control Room). The storefront's
+ * editorial serif and display sizes suit browsing, not work: inside `.studio`
+ * everything is set in Inter at compact, scannable sizes.
+ * UX: Aesthetic-usability — a calmer, tool-like type scale; Hick's Law — less
+ * visual noise competing with the task.
+ */
+@layer base {
+  .studio {
+    --font-fraunces: var(--font-inter);
+    --font-manrope: var(--font-inter);
+    --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    --type-display: 2rem;
+    --type-h1: clamp(1.5rem, 1.4rem + 0.4vw, 1.875rem);
+    --type-h2: 1.25rem;
+    --type-h3: 1.0625rem;
+    font-family: var(--font-sans);
+    font-feature-settings: "cv11", "ss01", "tnum";
+  }
+
+  .studio h1,
+  .studio h2,
+  .studio h3,
+  .studio .font-display {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-style: normal;
+    letter-spacing: -0.02em;
+  }
+
+  /* The shell's breadcrumb names the section, so page-level eyebrow kickers are redundant. */
+  .studio [data-studio-page] header p.uppercase:first-child {
+    display: none;
+  }
+}

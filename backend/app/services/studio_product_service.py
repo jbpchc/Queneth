@@ -21,6 +21,7 @@ from app.models.catalog import (
     Drop,
     Product,
     ProductImage,
+    SellerProfile,
     Subcategory,
     Variant,
     drop_products,
@@ -292,7 +293,10 @@ async def create(session: AsyncSession, user: User, body: ProductBasics) -> Prod
     assert_can(user, Permission.PRODUCT_CREATE)
     seller_id = own_boutique(user)
     cat, sub = await _taxonomy(session, body.category, body.subcategory)
-    brand = await _brand(session, body.brand)
+    seller = await session.get(SellerProfile, seller_id)
+    assert seller is not None
+    # Sellers are the brands: default to the boutique's own name.
+    brand = await _brand(session, (body.brand or "").strip() or seller.boutique_name)
     p = Product(
         seller_id=seller_id,
         brand_id=brand.id,
@@ -341,6 +345,24 @@ async def _set_images(
         new.append(ProductImage(url=url, alt=img.alt.strip(), position=pos, color=img.color))
     # UX: drag-to-reorder — the order sent is the gallery order; the first is the cover.
     p.images = new
+
+
+async def _guard_sale_prices(session: AsyncSession, p: Product, payload: list) -> None:  # type: ignore[type-arg]
+    """While a piece is in a live sale its prices belong to the sale: they are
+    restored from a snapshot when it ends, so edits now would be lost."""
+    from app.services.promotion_service import live_entry  # avoid an import cycle
+
+    if await live_entry(session, p.id) is None:
+        return
+    current = {v.id: v for v in await _variants(session, p.id)}
+    for item in payload:
+        v = current.get(item.id) if item.id is not None else None
+        if v is None or v.price_qc != item.price_qc or v.compare_at_qc != item.compare_at_qc:
+            raise Conflict(
+                "This piece is in a live sale. Withdraw it from the sale to change prices "
+                "or add variants.",
+                code="price_locked_by_sale",
+            )
 
 
 async def _set_variants(
@@ -435,6 +457,8 @@ async def patch(
         p.attributes = _clean_attributes(p.category.slug, body.attributes)
     if body.images is not None:
         await _set_images(session, settings, user, p, body.images)
+    if body.variants is not None:
+        await _guard_sale_prices(session, p, body.variants)
     variants = (
         await _set_variants(session, p, VARIANT_AXES.get(p.category.slug, []), body.variants)
         if body.variants is not None

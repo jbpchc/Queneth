@@ -1,7 +1,7 @@
 "use client";
 
 import confetti from "canvas-confetti";
-import { AlertTriangle, ArrowRight, PackageOpen, PartyPopper, Plus, Undo2, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, PackageOpen, PartyPopper, Truck, Undo2, X } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import Image from "next/image";
 import Link from "next/link";
@@ -42,27 +42,29 @@ export function DashboardView() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Dashboard</p>
-          <h1 className="text-h1 text-ink">{d.boutique}</h1>
+          <h1 className="text-h1 text-ink">Hello, {d.boutique}</h1>
+          <p className="text-small text-ink-muted">Here&apos;s how your store is doing today.</p>
         </div>
-        <Button asChild variant="primary"><Link href="/seller/products/new"><Plus aria-hidden /> New piece</Link></Button>
       </header>
+
+      {d.product_count > 0 && <NextSteps d={d} />}
 
       {d.first_sale && <FirstSale boutique={d.boutique} />}
 
       {d.product_count === 0 ? (
         <EmptyState
           icon={PackageOpen}
-          title="Add your first piece"
-          description="The product wizard walks you through photos, variants and details. Drafts save as you go."
-          action={<Button asChild variant="primary"><Link href="/seller/products/new">Start the wizard</Link></Button>}
+          title="Add your first product"
+          description="A short step-by-step form walks you through photos, sizes and colors, and details. Your progress saves as you go."
+          action={<Button asChild variant="primary"><Link href="/seller/products/new">Add a product</Link></Button>}
         />
       ) : null}
 
       <section aria-label="Today" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tile label="Sales today" value={formatQc(d.today_revenue_qc)} sub={`${d.today_orders} ${d.today_orders === 1 ? "order" : "orders"}`} />
-        <Tile label="To fulfil" value={formatNumber(d.to_fulfil)} sub="Paid or preparing" href="/seller/orders" highlight={d.to_fulfil > 0} />
-        <Tile label="Open returns" value={formatNumber(d.returns_open)} sub="Need your reply" href="/seller/orders" highlight={d.returns_open > 0} icon={d.returns_open > 0 ? <Undo2 aria-hidden className="size-4" /> : undefined} />
-        <Tile label="Last 30 days" value={formatQc(d.revenue_30d_qc)} sub="Gross, before 5% commission" />
+        <Tile label="Orders to ship" value={formatNumber(d.to_fulfil)} sub="Paid, waiting for you" href="/seller/orders" highlight={d.to_fulfil > 0} />
+        <Tile label="Open returns" value={formatNumber(d.returns_open)} sub="Waiting for your reply" href="/seller/orders" highlight={d.returns_open > 0} icon={d.returns_open > 0 ? <Undo2 aria-hidden className="size-4" /> : undefined} />
+        <Tile label="Last 30 days" value={formatQc(d.revenue_30d_qc)} sub="Before the 5% Queneth fee" />
       </section>
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
@@ -84,17 +86,17 @@ export function DashboardView() {
               ))}
             </ul>
           )}
-          <Link href="/seller/inventory" className="mt-auto inline-flex min-h-11 items-center gap-1 text-small font-semibold text-accent-2 hover:underline">Manage inventory <ArrowRight aria-hidden className="size-4" /></Link>
+          <Link href="/seller/inventory" className="mt-auto inline-flex min-h-11 items-center gap-1 text-small font-semibold text-accent-2 hover:underline">Update stock <ArrowRight aria-hidden className="size-4" /></Link>
         </Card>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="flex flex-col gap-4 p-5 sm:p-6">
-          <h2 className="text-small font-semibold text-ink">Conversion funnel <span className="font-normal text-ink-muted">· all time</span></h2>
+          <h2 className="text-small font-semibold text-ink">From views to orders <span className="font-normal text-ink-muted">· all time</span></h2>
           <FunnelBars f={d.funnel} />
         </Card>
         <Card className="flex flex-col gap-4 p-5 sm:p-6">
-          <h2 className="text-small font-semibold text-ink">Top pieces <span className="font-normal text-ink-muted">· last 30 days</span></h2>
+          <h2 className="text-small font-semibold text-ink">Best sellers <span className="font-normal text-ink-muted">· last 30 days</span></h2>
           {d.top_products.length === 0 ? (
             <p className="text-small text-ink-muted">Your best sellers will show here after your first orders.</p>
           ) : (
@@ -115,6 +117,40 @@ export function DashboardView() {
         </Card>
       </div>
     </div>
+  );
+}
+
+/** Plain-language to-do list built from the numbers above. */
+function NextSteps({ d }: { d: Dashboard }) {
+  const soldOut = d.low_stock.filter((l) => l.stock === 0).length;
+  const low = d.low_stock.length - soldOut;
+  const steps = [
+    d.to_fulfil > 0 && { icon: Truck, text: `Ship ${d.to_fulfil} ${d.to_fulfil === 1 ? "order" : "orders"}`, href: "/seller/orders", cta: "Go to orders" },
+    d.returns_open > 0 && { icon: Undo2, text: `Reply to ${d.returns_open} return ${d.returns_open === 1 ? "request" : "requests"}`, href: "/seller/orders", cta: "Review returns" },
+    soldOut > 0 && { icon: AlertTriangle, text: `${soldOut} ${soldOut === 1 ? "size or color is" : "sizes or colors are"} sold out`, href: "/seller/inventory", cta: "Restock" },
+    low > 0 && { icon: AlertTriangle, text: `${low} running low`, href: "/seller/inventory", cta: "Update stock" },
+  ].filter(Boolean) as { icon: typeof Truck; text: string; href: string; cta: string }[];
+  return (
+    <section aria-labelledby="next-steps" className="flex flex-col gap-3">
+      <h2 id="next-steps" className="text-h3 text-ink">Needs your attention</h2>
+      {steps.length === 0 ? (
+        <Card className="flex items-center gap-3 p-4 text-small text-ink">
+          <CheckCircle2 aria-hidden className="size-5 text-success" /> You&apos;re all caught up. Nothing to ship or restock.
+        </Card>
+      ) : (
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {steps.map(({ icon: Icon, text, href, cta }) => (
+            <li key={text}>
+              <Link href={href} className="flex items-center gap-3 rounded-card border border-border bg-surface p-4 transition-shadow hover:shadow-2">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent"><Icon aria-hidden className="size-[18px]" /></span>
+                <span className="min-w-0 flex-1 text-small font-semibold text-ink">{text}</span>
+                <span className="inline-flex shrink-0 items-center gap-1 text-small font-semibold text-accent-2">{cta} <ArrowRight aria-hidden className="size-4" /></span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

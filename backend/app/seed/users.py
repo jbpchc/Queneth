@@ -22,7 +22,6 @@ class DemoUser:
 DEMO_USERS: tuple[DemoUser, ...] = (
     DemoUser("buyer@queneth.test", "Isabela Reyes", (Role.BUYER,)),
     DemoUser("collector@queneth.test", "Marco Villanueva", (Role.BUYER,)),
-    DemoUser("seller@queneth.test", "Atelier Lumen", (Role.BUYER, Role.SELLER)),
     # ADMIN is seeded only, never self-registered.
     DemoUser("admin@queneth.test", "Queneth Control Room", (Role.ADMIN,)),
 )

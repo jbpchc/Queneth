@@ -14,6 +14,8 @@ export type AdminCollection = ApiSchemas["AdminCollection"];
 export type FlagGroup = ApiSchemas["FlagGroup"];
 export type AdminTx = ApiSchemas["AdminTxOut"];
 export type AuditEntry = ApiSchemas["AuditLogOut"];
+export type AdminPromotion = ApiSchemas["PromotionOut"];
+export type PromotionIn = ApiSchemas["PromotionIn"];
 
 async function unwrap<T>(p: Promise<{ data?: T; error?: unknown }>): Promise<T> {
   const { data, error } = await p;
@@ -34,6 +36,7 @@ const K = {
   moderation: ["admin", "moderation"] as const,
   wallet: ["admin", "wallet"] as const,
   audit: ["admin", "audit"] as const,
+  promotions: ["admin", "promotions"] as const,
 };
 
 // ─── Overview ──────────────────────────────────────────────────────────────
@@ -346,4 +349,31 @@ export function useAudit(f: { action: string; targetType: string }) {
       ),
     getNextPageParam: (last) => last.next_cursor,
   });
+}
+
+// ─── Promotions (platform sales) ───────────────────────────────────────────
+
+export function useAdminPromotions() {
+  const on = useAdmin();
+  return useQuery({ queryKey: K.promotions, enabled: on, queryFn: () => unwrap(api.GET("/api/v1/admin/promotions")) });
+}
+
+export function usePromotionActions() {
+  const qc = useQueryClient();
+  const settle = () => qc.invalidateQueries({ queryKey: K.promotions });
+  const save = useMutation({
+    mutationFn: ({ id, body }: { id?: string; body: PromotionIn }) =>
+      unwrap(
+        id
+          ? api.PUT("/api/v1/admin/promotions/{promotion_id}", { params: { path: { promotion_id: id } }, body })
+          : api.POST("/api/v1/admin/promotions", { body }),
+      ),
+    onSuccess: settle,
+  });
+  const cancel = useMutation({
+    mutationFn: (id: string) =>
+      unwrap(api.POST("/api/v1/admin/promotions/{promotion_id}/cancel", { params: { path: { promotion_id: id } } })),
+    onSuccess: settle,
+  });
+  return { save, cancel };
 }

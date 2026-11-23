@@ -16,6 +16,7 @@ from app.api.v1.routers import (
     media,
     notifications,
     orders,
+    promotions,
     reviews,
     seller,
     shop,
@@ -45,3 +46,6 @@ api_router.include_router(admin.router)
 api_router.include_router(admin_wallet.router)
 api_router.include_router(admin_room.router)
 api_router.include_router(admin_room.reports_router)
+api_router.include_router(promotions.public_router)
+api_router.include_router(promotions.seller_router)
+api_router.include_router(promotions.admin_router)

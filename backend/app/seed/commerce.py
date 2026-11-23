@@ -15,7 +15,6 @@ from app.services.geo_service import GeoService
 
 # (code, boutique slug, type, value, min spend QC, max uses, description)
 DEMO_VOUCHERS = [
-    ("LUMEN10", "atelier-lumen", "percent", 10, 3_000, 200, "10% off Atelier Lumen from 3,000 QC"),
     ("OBRA500", "obra-leather", "fixed", 500, 5_000, 200, "500 QC off Obra Leather from 5,000 QC"),
     (
         "NOCTURNE15",
@@ -58,16 +57,6 @@ DEMO_ADDRESSES = [
         "051724003",
         "4400",
         False,
-    ),
-    (
-        "seller@queneth.test",
-        "Studio",
-        "Atelier Lumen Studio",
-        "+639189876543",
-        "1440 M.H. del Pilar St., Ermita",
-        "137404001",
-        "1100",
-        True,
     ),
 ]
 

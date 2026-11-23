@@ -152,13 +152,13 @@ async def test_save_for_later(client, shop):
 
 async def test_vouchers(client, shop):
     await login(client, BUYER)
-    lumen = await variant_from(shop, "atelier-lumen", min_price=3_000)
+    lumen = await variant_from(shop, "nocturne-parfums", min_price=4_000)
     await add(client, lumen)
     # Postel's Law: code is trimmed and upper-cased.
-    bag = (await client.post(f"{CART}/vouchers", json={"code": " lumen10 "})).json()
+    bag = (await client.post(f"{CART}/vouchers", json={"code": " nocturne15 "})).json()
     group = bag["groups"][0]
-    assert group["voucher"]["code"] == "LUMEN10" and group["voucher"]["problem"] is None
-    assert group["discount_qc"] == lumen.price_qc * 10 // 100
+    assert group["voucher"]["code"] == "NOCTURNE15" and group["voucher"]["problem"] is None
+    assert group["discount_qc"] == lumen.price_qc * 15 // 100
     assert bag["total_qc"] == lumen.price_qc - group["discount_qc"]
 
     unknown = await client.post(f"{CART}/vouchers", json={"code": "NOPE-123"})
@@ -167,7 +167,7 @@ async def test_vouchers(client, shop):
     assert elsewhere.json()["error"]["code"] == "voucher_not_applicable"
 
     # Below minimum spend: the voucher stays, shows how much more to add, discounts 0.
-    v = await shop.scalar(select(Voucher).where(Voucher.code == "LUMEN10"))
+    v = await shop.scalar(select(Voucher).where(Voucher.code == "NOCTURNE15"))
     v.min_spend_qc = lumen.price_qc + 500
     await shop.commit()
     group = (await client.get(CART)).json()["groups"][0]
@@ -255,23 +255,25 @@ async def test_checkout_is_idempotent(client, shop):
 
 async def test_checkout_with_voucher(client, shop):
     await login(client, BUYER)
-    await add(client, await variant_from(shop, "atelier-lumen", min_price=3_000))
-    bag = (await client.post(f"{CART}/vouchers", json={"code": "LUMEN10"})).json()
+    await add(client, await variant_from(shop, "nocturne-parfums", min_price=4_000))
+    bag = (await client.post(f"{CART}/vouchers", json={"code": "NOCTURNE15"})).json()
     before = await balance(shop, BUYER)
     res = await pay(client, total=bag["total_qc"], address=await default_address(client))
     assert res.status_code == 201, res.text
     sub = res.json()["sub_orders"][0]
-    assert sub["voucher_code"] == "LUMEN10" and sub["discount_qc"] == bag["discount_qc"] > 0
+    assert sub["voucher_code"] == "NOCTURNE15" and sub["discount_qc"] == bag["discount_qc"] > 0
     assert sub["subtotal_qc"] == sub["items_total_qc"] - sub["discount_qc"]
     assert await balance(shop, BUYER) == before - bag["total_qc"]  # seller funds the discount
     v = await shop.scalar(
-        select(Voucher).where(Voucher.code == "LUMEN10").execution_options(populate_existing=True)
+        select(Voucher)
+        .where(Voucher.code == "NOCTURNE15")
+        .execution_options(populate_existing=True)
     )
     assert v.used_count == 1
     assert await shop.scalar(select(func.count()).select_from(VoucherRedemption)) == 1
     # Once per buyer.
-    await add(client, await variant_from(shop, "atelier-lumen", min_price=3_000))
-    again = await client.post(f"{CART}/vouchers", json={"code": "LUMEN10"})
+    await add(client, await variant_from(shop, "nocturne-parfums", min_price=4_000))
+    again = await client.post(f"{CART}/vouchers", json={"code": "NOCTURNE15"})
     assert again.status_code == 409 and "already used" in again.json()["error"]["message"]
 
 
@@ -339,12 +341,24 @@ async def test_cannot_use_someone_elses_address(client, shop):
 
 
 async def test_seller_cannot_check_out_own_product(client, shop):
-    seller = await user(shop, "seller@queneth.test")
-    own = await variant_from(shop, "atelier-lumen")
+    seller = await user(shop, "nocturne@queneth.test")
+    own = await variant_from(shop, "nocturne-parfums")
     shop.add(CartItem(user_id=seller.id, variant_id=own.id, qty=1))  # bypassing the bag guard
     await shop.commit()
-    await login(client, "seller@queneth.test")
-    res = await pay(client, total=own.price_qc, address=await default_address(client))
+    await login(client, "nocturne@queneth.test")
+    address = await client.post(
+        ADDR,
+        json={
+            "label": "Studio",
+            "recipient": "Nocturne Parfums",
+            "phone": "0918 987 6543",
+            "line1": "11 Bonifacio High St.",
+            "barangay_code": "137607003",
+            "zip": "1634",
+        },
+    )
+    assert address.status_code == 201, address.text
+    res = await pay(client, total=own.price_qc, address=address.json()["id"])
     assert res.status_code == 409 and res.json()["error"]["code"] == "own_product"
 
 

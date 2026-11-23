@@ -8,7 +8,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings
-from app.services import email_service, fulfilment_service, studio_service
+from app.services import email_service, fulfilment_service, promotion_service, studio_service
 
 log = structlog.get_logger(__name__)
 
@@ -54,5 +54,18 @@ def build_scheduler(
 
     scheduler.add_job(
         drop_golive, "interval", seconds=60, id="drop_golive", max_instances=1, coalesce=True
+    )
+
+    async def promotions_sweep() -> None:
+        try:
+            async with session_factory() as session:
+                done = await promotion_service.sweep(session)
+            if any(done.values()):
+                log.info("promotions_sweep", **done)
+        except Exception:  # noqa: BLE001
+            log.exception("promotions_sweep_failed")
+
+    scheduler.add_job(
+        promotions_sweep, "interval", seconds=60, id="promotions", max_instances=1, coalesce=True
     )
     return scheduler

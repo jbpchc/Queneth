@@ -33,6 +33,7 @@ from app.models.commerce import (
     WishlistBoard,
 )
 from app.models.integration import ContentFlag, EmailLog, GeoCache, MediaAsset, Notification
+from app.models.promotions import Promotion, PromotionEntry
 from app.models.user import AuditLog, EmailToken, RefreshToken, Role, Tier, User, UserStatus
 from app.models.wallet import (
     CodeRedemption,
@@ -45,6 +46,8 @@ from app.models.wallet import (
 )
 
 __all__ = [
+    "Promotion",
+    "PromotionEntry",
     "Address",
     "CartVoucher",
     "Order",

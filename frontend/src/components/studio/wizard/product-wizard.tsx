@@ -158,11 +158,12 @@ function NewProduct({ meta }: { meta: StudioMeta }) {
   const [condition, setCondition] = useState<Draft["condition"]>("new");
   const [error, setError] = useState<string | null>(null);
   const subs = meta.categories.find((c) => c.slug === category)?.subcategories ?? [];
-  const ready = title.trim().length >= 3 && brand.trim().length >= 2 && category && sub;
+  // Brand is optional: left empty, the piece is listed under the boutique name.
+  const ready = title.trim().length >= 3 && brand.trim().length !== 1 && category && sub;
 
   return (
     <div className="flex flex-col gap-6">
-      <WizardHeader title="New piece" step={0} done={[]} onStep={() => {}} newPiece saveText="Drafts save automatically after this step" />
+      <WizardHeader title="Add a product" step={0} done={[]} onStep={() => {}} newPiece saveText="Drafts save automatically after this step" />
       <Card className="flex flex-col gap-5 p-6">
         <BasicsFields
           meta={meta}
@@ -186,7 +187,7 @@ function NewProduct({ meta }: { meta: StudioMeta }) {
           onClick={async () => {
             setError(null);
             try {
-              const p = await create.mutateAsync({ title, brand, category, subcategory: sub, condition });
+              const p = await create.mutateAsync({ title, brand: brand.trim() || null, category, subcategory: sub, condition });
               router.replace(`/seller/products/${p.id}?step=media`);
             } catch (err) {
               setError(toApiError(err).message);
@@ -403,7 +404,7 @@ function BasicsFields({
         <Input value={v.title} maxLength={120} onChange={(e) => set({ title: e.target.value })} />
       </Field>
       <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Brand" hint="Pick one or type a new (fictional) brand.">
+        <Field label="Brand" optional hint="Leave empty to list it under your boutique name.">
           <Input list="studio-brands" value={v.brand} maxLength={60} onChange={(e) => set({ brand: e.target.value })} />
         </Field>
         <datalist id="studio-brands">{meta.brands.map((b) => <option key={b} value={b} />)}</datalist>

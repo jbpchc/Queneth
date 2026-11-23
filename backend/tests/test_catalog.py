@@ -43,7 +43,7 @@ async def test_seed_is_complete_and_idempotent(catalog):
     db = catalog
     assert await db.scalar(select(func.count()).select_from(Product)) >= 120
     assert await db.scalar(select(func.count()).select_from(Review)) >= 40
-    assert await db.scalar(select(func.count()).select_from(SellerProfile)) == 8
+    assert await db.scalar(select(func.count()).select_from(SellerProfile)) == 7
     assert await db.scalar(select(func.count()).select_from(Drop)) == 3
     again = await seed_catalog(db)
     assert again == {"products": 0, "reviews": 0}
@@ -62,7 +62,7 @@ def test_clothing_composition_must_total_100():
 
 async def test_seller_owns_only_their_products(catalog):
     db = catalog
-    lumen = await db.scalar(select(User).where(User.email == "seller@queneth.test"))
+    lumen = await db.scalar(select(User).where(User.email == "nocturne@queneth.test"))
     verde = await db.scalar(select(User).where(User.email == "verde@queneth.test"))
     product = await db.scalar(select(Product).where(Product.seller_id == lumen.seller_id))
     assert lumen.seller_id is not None
@@ -256,7 +256,7 @@ async def _slug(client, title: str) -> str:
 
 async def test_boutiques_and_follow(client, catalog):
     listing = (await client.get(f"{P}/boutiques")).json()
-    assert len(listing) == 8 and all(b["product_count"] > 0 for b in listing)
+    assert len(listing) == 7 and all(b["product_count"] > 0 for b in listing)
     before = (await client.get(f"{P}/boutiques/obra-leather")).json()
     assert before["bio"] and before["rating_count"] >= 0
 
@@ -384,7 +384,7 @@ async def test_seed_photos_keep_svg_fallback_and_primary_swatch(client, catalog)
 
     db = catalog
     first = await apply_photos(db)
-    assert first["products"] > 100 and first["banners"] == 8 and first["heroes"] >= 3
+    assert first["products"] > 100 and first["banners"] == 7 and first["heroes"] >= 3
     again = await apply_photos(db)
     assert again == {"products": 0, "banners": 0, "heroes": 0}  # idempotent
 

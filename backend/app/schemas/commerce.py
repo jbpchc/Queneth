@@ -57,7 +57,7 @@ class AddressOut(ApiModel):
 
 
 class VoucherApply(ApiModel):
-    code: str = Field(min_length=3, max_length=40, examples=["LUMEN10"])
+    code: str = Field(min_length=3, max_length=40, examples=["NOCTURNE15"])
 
 
 class AppliedVoucher(ApiModel):

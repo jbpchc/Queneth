@@ -16,7 +16,7 @@ A = "/api/v1/admin"
 ADMIN = "admin@queneth.test"
 BUYER = "buyer@queneth.test"
 OTHER = "collector@queneth.test"
-SELLER = "seller@queneth.test"
+SELLER = "nocturne@queneth.test"
 
 
 async def audited(db, action: str) -> int:
@@ -40,7 +40,7 @@ async def test_overview_counts_real_sales(client, shop):
     o = (await client.get(f"{A}/overview")).json()
     assert o["gmv_qc"] == bag["total_qc"] and o["orders"] == 1 and o["orders_30d"] == 1
     assert o["escrow_qc"] == bag["total_qc"] and o["active_buyers_30d"] == 1
-    assert o["sellers_active"] == 8 and len(o["series"]) == 30
+    assert o["sellers_active"] == 7 and len(o["series"]) == 30
     assert o["series"][-1]["revenue_qc"] == bag["total_qc"]
     assert o["top_categories"][0]["revenue_qc"] == bag["total_qc"]
 
@@ -48,7 +48,7 @@ async def test_overview_counts_real_sales(client, shop):
 async def test_seller_directory_suspend_and_reinstate(client, shop):
     await login(client, ADMIN)
     page = (await client.get(f"{A}/sellers")).json()
-    assert page["counts"]["approved"] == 8
+    assert page["counts"]["approved"] == 7
     obra = next(s for s in page["items"] if s["slug"] == "obra-leather")
     assert obra["owner"]["email"] == "obra@queneth.test" and obra["product_count"] > 0
     found = (await client.get(f"{A}/sellers", params={"q": "OBRA"})).json()["items"]
@@ -85,9 +85,9 @@ async def test_seller_directory_suspend_and_reinstate(client, shop):
 async def test_user_search_and_detail(client, shop):
     await login(client, ADMIN)
     res = (await client.get(f"{A}/users", params={"q": "queneth.test", "role": "SELLER"})).json()
-    assert res["total"] == 8 and all("SELLER" in u["roles"] for u in res["items"])
+    assert res["total"] == 7 and all("SELLER" in u["roles"] for u in res["items"])
     lumen = next(u for u in res["items"] if u["email"] == SELLER)
-    assert lumen["boutique"]["slug"] == "atelier-lumen" and lumen["wallet_qc"] == 50_000
+    assert lumen["boutique"]["slug"] == "nocturne-parfums" and lumen["wallet_qc"] == 50_000
     page = (await client.get(f"{A}/users", params={"limit": 2, "offset": 0})).json()
     assert len(page["items"]) == 2 and page["total"] > 2
     detail = (await client.get(f"{A}/users/{lumen['id']}")).json()

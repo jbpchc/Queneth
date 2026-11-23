@@ -134,9 +134,9 @@ class ImageIn(ApiModel):
 
 class ProductBasics(ApiModel):
     title: str = Field(min_length=3, max_length=120)
-    brand: str = Field(
-        min_length=2, max_length=60, description="Existing brand name, or a new one."
-    )
+    #: Sellers are brands: leave empty to sell under your boutique's own name,
+    #: or name a label you carry (multi-label boutiques).
+    brand: str | None = Field(default=None, max_length=60)
     category: str = Field(examples=["perfumes"])
     subcategory: str = Field(examples=["eau-de-parfum"])
     condition: Literal["new", "pre-loved", "vintage"] = "new"

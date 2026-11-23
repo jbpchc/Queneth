@@ -14,7 +14,7 @@ import bisect
 import re
 import unicodedata
 import uuid
-from collections import Counter
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -68,7 +68,6 @@ from app.schemas.catalog import (
     VariantOut,
 )
 from app.schemas.catalog_attributes import VARIANT_AXES
-from app.seed.photos import CATEGORY_PHOTOS, photo
 from app.services.catalog_index import size_sort_key
 
 CONDITION_LABELS = {
@@ -86,13 +85,6 @@ EXTRA_LABELS = {
     "fabric": "Fabric",
     "heel": "Heel height",
     "upper": "Upper",
-}
-CATEGORY_COVER = {
-    "clothing": ("dress", "b08457"),
-    "shoes": ("heels", "6b1e2e"),
-    "bags": ("shoulder", "e8b4b8"),
-    "accessories": ("watch", "c9a44c"),
-    "perfumes": ("perfume-1", "1f2a44"),
 }
 NEW_DROP_WINDOW = timedelta(days=14)
 
@@ -675,35 +667,64 @@ class CatalogService:
 
     # ─── categories, collections, drops, home ────────────────────────────
 
-    def cover(self, slug: str) -> str:
-        """Category cover: a curated photo, with the generated art as its fallback."""
-        shape, color = CATEGORY_COVER.get(slug, ("tote", "b08457"))
-        art = f"/api/v1/catalog/art/p/{shape}/3.svg?c={color}&m=Q"
-        if slug in CATEGORY_PHOTOS:
-            return photo(CATEGORY_PHOTOS[slug], fallback=art)
-        return self.abs_url(art) or ""
+    def covers(self, products: list[Product], n: int = 4) -> list[str]:
+        """Cover photos for a category or subcategory, taken from the sellers'
+        own listings: most-wished first, then newest, one per seller first so a
+        single boutique doesn't fill the tile."""
+        ranked = sorted(
+            (p for p in products if p.images and p.total_stock > 0),
+            key=lambda p: (
+                -p.wishlist_count,
+                -(p.published_at.timestamp() if p.published_at else 0),
+            ),
+        )
+        picked: list[str] = []
+        sellers: set[uuid.UUID] = set()
+        for pass_ in (0, 1):  # first one per seller, then fill up
+            for p in ranked:
+                if len(picked) >= n:
+                    return picked
+                if pass_ == 0 and p.seller_id in sellers:
+                    continue
+                url = self.abs_url(p.images[0].url)
+                if url and url not in picked:
+                    picked.append(url)
+                    sellers.add(p.seller_id)
+        return picked
 
     async def categories(self, products: list[Product] | None = None) -> list[CategoryOut]:
         products = products if products is not None else await self.visible_products()
         cats = list(
             (await self.session.scalars(select(Category).order_by(Category.sort_order))).all()
         )
-        per_cat = Counter(p.category_id for p in products)
-        per_sub = Counter(p.subcategory_id for p in products)
-        return [
-            CategoryOut(
-                name=c.name,
-                slug=c.slug,
-                tagline=c.tagline,
-                product_count=per_cat[c.id],
-                cover_url=self.cover(c.slug),
-                subcategories=[
-                    SubcategoryOut(name=s.name, slug=s.slug, product_count=per_sub[s.id])
-                    for s in c.subcategories
-                ],
+        by_cat: dict[uuid.UUID, list[Product]] = defaultdict(list)
+        by_sub: dict[uuid.UUID, list[Product]] = defaultdict(list)
+        for p in products:
+            by_cat[p.category_id].append(p)
+            by_sub[p.subcategory_id].append(p)
+        out = []
+        for c in cats:
+            covers = self.covers(by_cat[c.id])
+            out.append(
+                CategoryOut(
+                    name=c.name,
+                    slug=c.slug,
+                    tagline=c.tagline,
+                    product_count=len(by_cat[c.id]),
+                    cover_url=covers[0] if covers else None,
+                    cover_images=covers,
+                    subcategories=[
+                        SubcategoryOut(
+                            name=sc.name,
+                            slug=sc.slug,
+                            product_count=len(by_sub[sc.id]),
+                            cover_url=next(iter(self.covers(by_sub[sc.id], 1)), None),
+                        )
+                        for sc in c.subcategories
+                    ],
+                )
             )
-            for c in cats
-        ]
+        return out
 
     async def category(self, slug: str) -> CategoryOut:
         for c in await self.categories():

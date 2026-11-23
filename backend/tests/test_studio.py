@@ -16,7 +16,7 @@ from app.services import studio_service
 from tests.test_checkout import add, default_address, login, pay, user, variant_from
 
 S = "/api/v1/seller"
-SELLER = "seller@queneth.test"  # Atelier Lumen
+SELLER = "nocturne@queneth.test"  # Nocturne Parfums
 OTHER_SELLER = "obra@queneth.test"  # Obra Leather
 BUYER = "buyer@queneth.test"
 ADMIN = "admin@queneth.test"
@@ -60,7 +60,7 @@ async def asset(db, email: str, purpose: str = "product") -> MediaAsset:
 
 
 async def ready_product(client, db, *, publish: bool = True) -> dict:
-    """Seller (Atelier Lumen) walks the wizard to a complete perfume."""
+    """Seller (Nocturne Parfums) walks the wizard to a complete perfume."""
     await login(client, SELLER)
     res = await client.post(
         f"{S}/products",
@@ -100,7 +100,7 @@ async def test_apply_approve_and_reject(client, shop):
     res = await client.put("/api/v1/seller-application", json={**APPLICATION, "bio": "Too short"})
     assert res.status_code == 422
     taken = await client.put(
-        "/api/v1/seller-application", json={**APPLICATION, "boutique_name": "atelier lumen"}
+        "/api/v1/seller-application", json={**APPLICATION, "boutique_name": "nocturne parfums"}
     )
     assert taken.status_code == 409 and taken.json()["error"]["code"] == "boutique_name_taken"
     app_ = (await client.put("/api/v1/seller-application", json=APPLICATION)).json()
@@ -291,7 +291,7 @@ async def test_dashboard_first_sale_and_earnings(client, shop):
     assert before["first_sale"] is False and len(before["series"]) == 30
 
     await login(client, BUYER)
-    v = await variant_from(shop, "atelier-lumen", min_price=3_000)
+    v = await variant_from(shop, "nocturne-parfums", min_price=4_000)
     bag = await add(client, v)
     order = (await pay(client, total=bag["total_qc"], address=await default_address(client))).json()
     sub = order["sub_orders"][0]
@@ -423,16 +423,16 @@ async def test_voucher_crud(client, shop):
 
     # A used voucher stays on record.
     await login(client, BUYER)
-    await add(client, await variant_from(shop, "atelier-lumen", min_price=3_000))
-    bag = (await client.post("/api/v1/cart/vouchers", json={"code": "LUMEN10"})).json()
+    await add(client, await variant_from(shop, "nocturne-parfums", min_price=4_000))
+    bag = (await client.post("/api/v1/cart/vouchers", json={"code": "NOCTURNE15"})).json()
     await pay(client, total=bag["total_qc"], address=await default_address(client))
     await login(client, SELLER)
-    lumen = next(v for v in (await client.get(f"{S}/vouchers")).json() if v["code"] == "LUMEN10")
+    lumen = next(v for v in (await client.get(f"{S}/vouchers")).json() if v["code"] == "NOCTURNE15")
     assert lumen["used_count"] == 1 and lumen["discount_given_qc"] > 0
     assert (await client.delete(f"{S}/vouchers/{lumen['id']}")).status_code == 409
     # Another boutique can't see or change it.
     await login(client, OTHER_SELLER)
-    assert all(v["code"] != "LUMEN10" for v in (await client.get(f"{S}/vouchers")).json())
+    assert all(v["code"] != "NOCTURNE15" for v in (await client.get(f"{S}/vouchers")).json())
     assert (
         await client.patch(f"{S}/vouchers/{lumen['id']}", json={"is_active": False})
     ).status_code == 404
@@ -444,7 +444,7 @@ async def test_voucher_crud(client, shop):
 async def test_review_reply(client, shop):
     await login(client, SELLER)
     reviews = (await client.get(f"{S}/reviews", params={"unreplied": "true"})).json()
-    assert reviews, "the seed has reviews for Atelier Lumen"
+    assert reviews, "the seed has reviews for Nocturne Parfums"
     target = reviews[0]
     res = await client.put(f"{S}/reviews/{target['id']}/reply", json={"reply": "Thank you, truly."})
     assert res.status_code == 200 and res.json()["seller_reply"] == "Thank you, truly."
@@ -494,7 +494,7 @@ async def test_storefront_settings(client, shop):
     )
     assert res.status_code == 200 and len(res.json()["lookbook"]) == 1
 
-    page = (await client.get("/api/v1/catalog/boutiques/atelier-lumen")).json()
+    page = (await client.get("/api/v1/catalog/boutiques/nocturne-parfums")).json()
     assert [c["id"] for c in page["featured"]] == [product["id"]] and page["lookbook"]
 
     # Another boutique's piece can't be featured.
@@ -506,5 +506,5 @@ async def test_storefront_settings(client, shop):
 
 
 async def test_seller_profile_counts(shop):
-    assert await shop.scalar(select(func.count()).select_from(SellerProfile)) == 8
+    assert await shop.scalar(select(func.count()).select_from(SellerProfile)) == 7
     assert await shop.scalar(select(func.count()).select_from(Variant)) > 100

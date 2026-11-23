@@ -44,7 +44,7 @@ Photo IDs (`https://images.unsplash.com/photo-<id>`), by where they're used:
 - **niche**: `1709662369957-0cbf9f8452fc`, `1709662217659-c7966220219f`
 - **gift-sets**: `1535683577427-740aaac4ec25`, `1716857591457-7d7fa45199c6`, `1622618991746-fe6004db3a47`
 - **boutique banners, collection and drop heroes**: `1596484552993-aec4311d3381`, `1776000680544-ebf0989a71df`, `1766934587163-186d20bf3d40`, `1785860089217-5c7f62013cb9`, `1770226415002-dbbd40327ec7`, `1776813122119-c23f1e436098`
-- **category covers**: clothing `1704775990154-b87562565d4c`, shoes `1573100925118-870b8efc799d`, bags `1624687943971-e86af76d57de`, accessories `1617038220319-276d3cfab638`, perfumes `1588405748880-12d1d2a59f75`
+- **category covers**: none of their own; each category shows photos of pieces boutiques have listed in it
 
 ## Generated art
 

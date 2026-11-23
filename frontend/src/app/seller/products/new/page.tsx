@@ -3,7 +3,7 @@ import { Suspense } from "react";
 
 import { ProductWizard } from "@/components/studio/wizard/product-wizard";
 
-export const metadata: Metadata = { title: "New piece", robots: { index: false } };
+export const metadata: Metadata = { title: "Add a product", robots: { index: false } };
 
 export default function NewProductPage() {
   return (

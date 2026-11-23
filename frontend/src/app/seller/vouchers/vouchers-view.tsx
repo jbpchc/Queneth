@@ -34,7 +34,7 @@ export function VouchersView() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-2">
           <p className="text-caption font-bold uppercase tracking-[0.14em] text-ink-muted">Promotions</p>
-          <h1 className="text-h1 text-ink">Vouchers</h1>
+          <h1 className="text-h1 text-ink">Discount codes</h1>
           <p className="text-small text-ink-muted">Seller-funded: discounts come off your boutique&apos;s part of the order. One voucher per boutique per bag.</p>
         </div>
         {!creating && <Button variant="primary" onClick={() => setCreating(true)}><Plus aria-hidden /> New voucher</Button>}
