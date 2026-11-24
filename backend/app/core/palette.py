@@ -6,6 +6,12 @@ PALETTE: dict[str, str] = {
     "Navy": "1f2a44", "Olive": "6b6b3a", "Cobalt": "2f4bff", "Terracotta": "c0603e",
     "Lilac": "c9b6ff", "Citron": "d9d36b", "Silver": "c0c0c8", "Gold": "c9a44c",
     "Rose Gold": "b76e79", "Tortoise": "6e4a2e", "Natural": "d9c49b", "Ecru": "e9e1cf",
+    # Everyday names used by the brand stores (Nike, Bench, Penshoppe)
+    "Black": "151515", "White": "f7f7f5", "Grey": "8e8e8e", "Light grey": "cfcfcf",
+    "Heather grey": "a9a9a9", "Stone": "d9d3c7", "Dark brown": "4a3f35", "Red": "b3242b",
+    "Coral": "f27b69", "Pink": "f06ab0", "Purple": "4b3a8c", "Green": "3f7a4d",
+    "Royal blue": "3557a8", "Slate blue": "4a6a84", "Light wash": "a9c1dc",
+    "Mid wash": "5b7fa8", "Dark wash": "2b3a55", "Black wash": "2a2d33",
 }  # fmt: skip
 
 
