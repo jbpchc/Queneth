@@ -17,7 +17,7 @@ import { PinInput } from "@/components/wallet/pin-input";
 import { toApiError, type ApiError } from "@/lib/api/client";
 import { useSession } from "@/lib/auth/session";
 import { addressLine, formatPhone, useAddresses, useCheckout, type Address } from "@/lib/commerce";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 import { useBag } from "@/lib/shop";
 import { newKey, usePin, useTopUp, useWallet } from "@/lib/wallet";
 import { cn } from "@/lib/utils";
@@ -242,7 +242,7 @@ export function CheckoutView() {
                       </div>
                       <div className="min-w-0 flex-1 text-small">
                         <p className="truncate font-semibold text-ink">{i.product.title}</p>
-                        <p className="text-ink-muted">{Object.values(i.options).join(" · ")} · Qty {i.qty}</p>
+                        <p className="text-ink-muted">{optionLabel(i.options)} · Qty {i.qty}</p>
                       </div>
                       <span className="tabular text-small">{formatQc(i.line_total_qc)}</span>
                     </li>

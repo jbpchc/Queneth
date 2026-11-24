@@ -20,3 +20,12 @@ def sku_stem(slug: str, shop_slug: str = "", limit: int = 20) -> str:
             break
         stem.append(w)
     return "-".join(stem).upper()[: max(limit, len(stem[0]) if stem else 0)]
+
+
+_OPTION_ORDER = ["color", "metal", "size", "volume", "width"]
+
+
+def option_label(options: dict[str, str], sep: str = " · ") -> str:
+    """{'size': 'M', 'color': 'Purple'} -> 'Purple · M', whatever the stored key order."""
+    rank = {k: i for i, k in enumerate(_OPTION_ORDER)}
+    return sep.join(options[k] for k in sorted(options, key=lambda k: rank.get(k, len(rank))))

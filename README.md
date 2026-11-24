@@ -40,12 +40,22 @@ Migrations run automatically when the `api` container starts. To run one by hand
 docker compose exec api alembic upgrade head
 ```
 
-### Without Docker (SQLite)
+### In the Ubuntu VM (one command)
 
-No Postgres or Docker needed; data is kept in `backend/demo.db` between runs:
+Set up once with **[docs/VM-SETUP.md](docs/VM-SETUP.md)**, then:
 
 ```bash
-cd backend && .venv/Scripts/python scripts/run_demo.py
+vm/start.sh --prod   # API + storefront in the background; survives closing the terminal
+vm/status.sh         # health, VM resources, log check
+vm/stop.sh
+```
+
+### Without Docker (SQLite)
+
+No Postgres or Docker needed; data is kept in `backend/demo.db` between runs. Commands below use the Linux/macOS path `.venv/bin/python`; on Windows use `.venv/Scripts/python`.
+
+```bash
+cd backend && .venv/bin/python scripts/run_demo.py
 ```
 
 ```bash
@@ -61,19 +71,19 @@ Your sellers, products and uploaded photos live in `backend/demo.db` and `backen
 On this computer, after changing anything in the app:
 
 ```bash
-cd backend && .venv/Scripts/python scripts/snapshot.py save
+cd backend && .venv/bin/python scripts/snapshot.py save
 git add backend/snapshot && git commit -m "Update store snapshot" && git push
 ```
 
-On the other computer or VM (Python 3.12+ and Node 20+ installed):
+On the other computer or VM (Python 3.12+ and Node 20+ installed; for the Ubuntu VM follow [docs/VM-SETUP.md](docs/VM-SETUP.md) instead):
 
 ```bash
 git clone https://github.com/jbpchc/Queneth.git && cd Queneth/backend
-python -m venv .venv
-.venv/Scripts/python -m pip install -e ".[dev]"   # Linux/macOS: .venv/bin/python
+python3 -m venv .venv
+.venv/bin/python -m pip install -e ".[dev]"
 cp .env.example .env
-.venv/Scripts/python scripts/snapshot.py load      # add --force to replace an existing demo.db
-.venv/Scripts/python scripts/run_demo.py
+.venv/bin/python scripts/snapshot.py load      # add --force to replace an existing demo.db
+.venv/bin/python scripts/run_demo.py
 ```
 
 ```bash

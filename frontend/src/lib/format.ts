@@ -45,3 +45,17 @@ export function formatRelative(date: Date | string, now: Date = new Date()): str
   }
   return "just now";
 }
+
+const OPTION_ORDER = ["color", "metal", "size", "volume", "width"];
+
+/**
+ * A variant's options in one fixed order: "Purple · M". Stored key order
+ * varies (Postgres JSONB puts shorter keys first, "size" before "color").
+ */
+export function optionLabel(options: Record<string, string>, sep = " · "): string {
+  const rank = (k: string) => (OPTION_ORDER.includes(k) ? OPTION_ORDER.indexOf(k) : OPTION_ORDER.length);
+  return Object.keys(options)
+    .sort((a, b) => rank(a) - rank(b))
+    .map((k) => options[k])
+    .join(sep);
+}

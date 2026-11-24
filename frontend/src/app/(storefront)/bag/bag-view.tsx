@@ -15,7 +15,7 @@ import { Alert, EmptyState, ErrorState } from "@/components/ui/states";
 import { toApiError, type ApiSchemas } from "@/lib/api/client";
 import { useSession } from "@/lib/auth/session";
 import { useSaveForLater, useVouchers } from "@/lib/commerce";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 import { useBag, useBagLine } from "@/lib/shop";
 import { useWallet } from "@/lib/wallet";
 
@@ -163,7 +163,7 @@ function Line({ item }: { item: BagItem }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-caption font-bold uppercase tracking-[0.1em] text-ink-muted">{item.product.brand.name}</p>
         <Link href={`/p/${item.product.slug}`} className="font-semibold text-ink hover:underline">{item.product.title}</Link>
-        <p className="text-small text-ink-muted">{Object.values(item.options).join(" · ")}</p>
+        <p className="text-small text-ink-muted">{optionLabel(item.options)}</p>
         {!item.available && <p className="text-small font-semibold text-danger">No longer available — remove it to continue.</p>}
         {item.available && item.stock <= 3 && <p className="text-small text-warning">Only {item.stock} left</p>}
         <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-2">
@@ -284,7 +284,7 @@ function SavedForLater({ items }: { items: BagItem[] }) {
               </Link>
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <Link href={`/p/${item.product.slug}`} className="line-clamp-2 text-small font-semibold text-ink hover:underline">{item.product.title}</Link>
-                <p className="text-caption text-ink-muted">{Object.values(item.options).join(" · ")}</p>
+                <p className="text-caption text-ink-muted">{optionLabel(item.options)}</p>
                 <Price amount={item.unit_price_qc} size="sm" />
                 <div className="mt-auto flex items-center gap-2">
                   <Button

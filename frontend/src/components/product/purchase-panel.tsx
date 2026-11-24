@@ -13,7 +13,7 @@ import { Chip } from "@/components/ui/chip";
 import { Price } from "@/components/ui/price";
 import { toApiError, type ApiSchemas } from "@/lib/api/client";
 import { useSession } from "@/lib/auth/session";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 import { pop } from "@/lib/motion";
 import { useAddToBag, useBagLine } from "@/lib/shop";
 import { cn } from "@/lib/utils";
@@ -102,7 +102,7 @@ export function PurchasePanel({ product, sizeHelp }: { product: Detail; sizeHelp
     try {
       const bag = await add.mutateAsync({ variantId: variant.id });
       const line = bag.groups.flatMap((g) => g.items).find((i) => i.variant_id === variant.id);
-      const label = Object.values(variant.options).join(" · ");
+      const label = optionLabel(variant.options);
       toast.success("Added to your bag", {
         description: `${product.title} · ${label}`,
         action: { label: "View bag", onClick: () => router.push("/bag") },

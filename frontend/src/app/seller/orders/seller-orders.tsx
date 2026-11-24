@@ -24,7 +24,7 @@ import {
   type SellerOrder,
   type SubStatus,
 } from "@/lib/commerce";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 /** UX: Serial Position — the queue reads in the order work happens; returns sit
@@ -136,7 +136,7 @@ function OrderCard({ order: o }: { order: SellerOrder }) {
                 </div>
                 <div className="min-w-0 flex-1 text-small">
                   <p className="truncate font-semibold text-ink">{i.title}</p>
-                  <p className="text-ink-muted">{Object.values(i.options).join(" · ")} · Qty {i.qty}</p>
+                  <p className="text-ink-muted">{optionLabel(i.options)} · Qty {i.qty}</p>
                 </div>
                 <span className="tabular text-small">{formatQc(i.line_total_qc)}</span>
               </li>

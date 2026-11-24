@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { toApiError } from "@/lib/api/client";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 import { useInventory, useUpdateInventory } from "@/lib/studio";
 import { cn } from "@/lib/utils";
 
@@ -94,14 +94,14 @@ export function InventoryView() {
                         </span>
                         <span className="flex flex-col">
                           <span className="font-semibold text-ink">{r.product_title}</span>
-                          <span className="text-caption text-ink-muted">{Object.values(r.options).join(" · ")}{r.product_status !== "active" && ` · ${r.product_status}`}</span>
+                          <span className="text-caption text-ink-muted">{optionLabel(r.options)}{r.product_status !== "active" && ` · ${r.product_status}`}</span>
                         </span>
                       </Link>
                     </td>
                     <td className="tabular whitespace-nowrap px-3 py-2.5 text-ink-muted">{r.sku}</td>
                     <td className="tabular whitespace-nowrap px-3 py-2.5 text-right">{formatQc(r.price_qc)}</td>
                     <td className="py-2.5 text-right">
-                      <Input aria-label={`Stock for ${r.product_title} ${Object.values(r.options).join(" ")}`} inputMode="numeric" value={stock}
+                      <Input aria-label={`Stock for ${r.product_title} ${optionLabel(r.options, " ")}`} inputMode="numeric" value={stock}
                         onChange={(ev) => set(r.variant_id, { stock: ev.target.value.replace(/\D/g, "").slice(0, 4) })} className="tabular h-10 w-24 text-right" />
                     </td>
                     <td className="py-2.5 pr-4 text-right">

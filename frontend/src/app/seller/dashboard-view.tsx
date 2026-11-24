@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState, ErrorState } from "@/components/ui/states";
 import { toApiError } from "@/lib/api/client";
-import { formatNumber, formatQc } from "@/lib/format";
+import { formatNumber, formatQc, optionLabel } from "@/lib/format";
 import { useDashboard, useDismissFirstSale, type Dashboard } from "@/lib/studio";
 
 /**
@@ -80,7 +80,7 @@ export function DashboardView() {
               {d.low_stock.map((l) => (
                 <li key={l.variant_id} className="flex items-center gap-3 py-2 text-small">
                   <AlertTriangle aria-hidden className={l.stock === 0 ? "size-4 text-danger" : "size-4 text-warning"} />
-                  <span className="min-w-0 flex-1 truncate text-ink">{l.title} <span className="text-ink-muted">· {Object.values(l.options).join(" · ")}</span></span>
+                  <span className="min-w-0 flex-1 truncate text-ink">{l.title} <span className="text-ink-muted">· {optionLabel(l.options)}</span></span>
                   <span className="tabular font-semibold">{l.stock === 0 ? "Sold out" : `${l.stock} left`}</span>
                 </li>
               ))}

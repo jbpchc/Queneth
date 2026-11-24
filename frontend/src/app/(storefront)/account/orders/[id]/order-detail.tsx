@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/states";
 import { toApiError } from "@/lib/api/client";
 import { addressLine, formatPhone, statusLabel, statusTone, useOrder, type SubOrder } from "@/lib/commerce";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 
 const dateFmt = new Intl.DateTimeFormat("en-PH", { dateStyle: "medium", timeStyle: "short" });
 
@@ -132,7 +132,7 @@ function SubOrderCard({ orderId, sub: s }: { orderId: string; sub: SubOrder }) {
               <div className="flex min-w-0 flex-1 flex-col gap-1 text-small">
                 <p className="text-caption font-bold uppercase tracking-[0.1em] text-ink-muted">{i.brand}</p>
                 <Link href={`/p/${i.product_slug}`} className="font-semibold text-ink hover:underline">{i.title}</Link>
-                <p className="text-ink-muted">{Object.values(i.options).join(" · ")} · Qty {i.qty}</p>
+                <p className="text-ink-muted">{optionLabel(i.options)} · Qty {i.qty}</p>
                 {i.review_id ? (
                   <p className="mt-1 inline-flex items-center gap-1.5 font-semibold text-success">
                     <CheckCircle2 aria-hidden className="size-4" /> Reviewed — thank you

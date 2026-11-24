@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.errors import Conflict, NotFound
 from app.core.permissions import Permission, assert_can
+from app.core.text import option_label
 from app.models.catalog import Product, Review
 from app.models.commerce import Order, OrderItem, OrderStatus, SubOrder
 from app.models.user import User
@@ -44,7 +45,7 @@ async def create(session: AsyncSession, settings: Settings, user: User, body: Re
         title=body.title or None,
         body=body.body,
         photos=photos,
-        variant_label=" · ".join(item.options_snapshot.values()) or None,
+        variant_label=option_label(item.options_snapshot) or None,
         status="published",
     )
     session.add(review)

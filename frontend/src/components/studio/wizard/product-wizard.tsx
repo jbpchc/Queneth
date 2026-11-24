@@ -18,7 +18,7 @@ import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, ErrorState } from "@/components/ui/states";
 import { toApiError, type ApiSchemas } from "@/lib/api/client";
-import { formatQc } from "@/lib/format";
+import { formatQc, optionLabel } from "@/lib/format";
 import { useProductActions, useStudioMeta, useStudioProduct, type StudioMeta, type StudioProduct } from "@/lib/studio";
 import { cn } from "@/lib/utils";
 
@@ -486,7 +486,7 @@ function PricingStep({ rows, onChange }: { rows: Row[]; onChange: (r: Row[]) => 
         const bad = r.compare !== "" && num(r.compare) <= num(r.price);
         return (
           <div key={r.key} className="grid items-end gap-3 rounded-input border border-border p-3 sm:grid-cols-[1fr_160px_160px]">
-            <span className="text-small font-semibold text-ink">{Object.values(r.options).join(" · ") || `Variant ${i + 1}`}</span>
+            <span className="text-small font-semibold text-ink">{optionLabel(r.options) || `Variant ${i + 1}`}</span>
             <label className="flex flex-col gap-1 text-caption font-semibold text-ink">Price (QC)<Input inputMode="numeric" value={r.price} onChange={(e) => update(i, { price: e.target.value.replace(/[^\d]/g, "") })} /></label>
             <label className="flex flex-col gap-1 text-caption font-semibold text-ink">
               Original price <span className="font-normal text-ink-muted">(optional)</span>

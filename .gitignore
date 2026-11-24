@@ -34,3 +34,7 @@ saas-promo/
 .agents/
 .claude/
 skills-lock.json
+
+# VM run state (vm/start.sh)
+logs/
+.run/
