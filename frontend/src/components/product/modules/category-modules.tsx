@@ -5,7 +5,7 @@ import type { ApiSchemas } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 import { FragrancePyramid } from "./fragrance-pyramid";
-import { SHOE_SIZES } from "./size-guide";
+import { SHOE_SIZES } from "./size-data";
 
 type Detail = ApiSchemas["ProductDetail"];
 type Attrs = Record<string, unknown>;
@@ -110,7 +110,8 @@ function ShoeFit({ attrs, sizes, verdict, fit }: { attrs: Attrs; sizes: string[]
             </thead>
             <tbody className="tabular divide-y divide-border">
               {SHOE_SIZES.map(([eu, uk, usw, usm, cm]) => (
-                <tr key={eu} className={cn(!offered.has(eu) && "text-ink-muted/60")}>
+                // Sellers list EU (40) or US men's (9) sizes; highlight either.
+                <tr key={eu} className={cn(!offered.has(eu) && !offered.has(usm) && "text-ink-muted/60")}>
                   <th scope="row" className="py-2 text-left font-semibold">{eu}</th><td>{uk}</td><td>{usw}</td><td>{usm}</td><td>{cm}</td>
                 </tr>
               ))}

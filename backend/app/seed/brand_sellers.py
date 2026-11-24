@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.permissions import Role
 from app.core.security import hash_password, utcnow
-from app.core.text import slugify
+from app.core.text import sku_stem, slugify
 from app.models import User
 from app.models.catalog import (
     Brand,
@@ -597,6 +597,10 @@ async def seed_brand_sellers(session: AsyncSession) -> dict[str, int]:
             session.add(profile)
             await session.flush()
             added["sellers"] += 1
+        elif await session.scalar(select(Product.id).where(Product.seller_id == profile.id).limit(1)):
+            # The store already has products, possibly edited in Seller Studio
+            # (renamed, new slug). Matching by slug would re-add the originals.
+            continue
         brand = await session.scalar(select(Brand).where(Brand.slug == slugify(s.name)))
         if brand is None:
             brand = Brand(name=s.name, slug=slugify(s.name))
@@ -638,7 +642,7 @@ async def seed_brand_sellers(session: AsyncSession) -> dict[str, int]:
                     k = len(variants)
                     variants.append(
                         Variant(
-                            sku=f"{s.initials}-{slug[-12:].upper()}-{k:02}",
+                            sku=f"{s.initials}-{sku_stem(slug, s.slug)}-{k:02}",
                             options=opts,
                             price_qc=it.price,
                             compare_at_qc=it.compare_at,

@@ -112,9 +112,9 @@ export function ProductsView() {
                 </th>
                 <th className="py-3 font-semibold">Product</th>
                 <th className="py-3 font-semibold">Status</th>
-                <th className="py-3 text-right font-semibold">Price</th>
-                <th className="py-3 text-right font-semibold">Stock</th>
-                <th className="py-3 text-right font-semibold">Views · Saves · Sold</th>
+                <th className="whitespace-nowrap px-3 py-3 text-right font-semibold">Price</th>
+                <th className="whitespace-nowrap px-3 py-3 text-right font-semibold">Stock</th>
+                <th className="whitespace-nowrap px-3 py-3 text-right font-semibold">Views · Saves · Sold</th>
                 <th className="w-40 py-3"><span className="sr-only">Actions</span></th>
               </tr>
             </thead>
@@ -136,9 +136,9 @@ export function ProductsView() {
                     </Link>
                   </td>
                   <td className="py-3"><Badge tone={STATUS_TONE[r.status]} withIcon={false}>{STATUS_LABEL[r.status]}</Badge></td>
-                  <td className="tabular py-3 text-right">{r.min_price_qc ? formatQc(r.min_price_qc) : "—"}</td>
-                  <td className={cn("tabular py-3 text-right", r.low_stock && r.status === "active" && "font-semibold text-warning")}>{formatNumber(r.total_stock)}</td>
-                  <td className="tabular py-3 text-right text-ink-muted">{formatNumber(r.view_count)} · {formatNumber(r.wishlist_count)} · <span className="text-ink">{formatNumber(r.sold)}</span></td>
+                  <td className="tabular whitespace-nowrap px-3 py-3 text-right">{r.min_price_qc ? formatQc(r.min_price_qc) : "—"}</td>
+                  <td className={cn("tabular whitespace-nowrap px-3 py-3 text-right", r.low_stock && r.status === "active" && "font-semibold text-warning")}>{formatNumber(r.total_stock)}</td>
+                  <td className="tabular whitespace-nowrap px-3 py-3 text-right text-ink-muted">{formatNumber(r.view_count)} · {formatNumber(r.wishlist_count)} · <span className="text-ink">{formatNumber(r.sold)}</span></td>
                   <td className="py-3 pr-2">
                     <div className="flex justify-end">
                       <Button asChild size="icon" variant="ghost" aria-label={`Edit ${r.title}`}><Link href={`/seller/products/${r.id}`}><Pencil aria-hidden /></Link></Button>

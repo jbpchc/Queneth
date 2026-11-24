@@ -97,7 +97,7 @@ export function FilterBar({ facets, total, category, hide = [], children }: Filt
           {/* Desktop: the four key filters */}
           <div className="hidden flex-wrap items-center gap-2 md:flex">
             {facets.sizes.length > 0 && <FilterPopover label="Size" active={selected("size").length}>{sizePanel}</FilterPopover>}
-            {facets.colors.length > 0 && <FilterPopover label="Color" active={selected("color").length}>{colorPanel}</FilterPopover>}
+            {facets.colors.length > 0 && <FilterPopover label="Color" wide active={selected("color").length}>{colorPanel}</FilterPopover>}
             <FilterPopover label="Price" active={params.get("price_min") || params.get("price_max") ? 1 : 0}>{pricePanel}</FilterPopover>
             {keyExtra && facets.extra[keyExtra] && (
               <FilterPopover label={EXTRA_LABELS[keyExtra] ?? keyExtra} active={facetSelected(keyExtra).length}>
@@ -203,7 +203,7 @@ function Group({ value, title, children }: { value: string; title: string; child
   );
 }
 
-function FilterPopover({ label, active, children }: { label: string; active: number; children: ReactNode }) {
+function FilterPopover({ label, active, wide, children }: { label: string; active: number; wide?: boolean; children: ReactNode }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -219,7 +219,8 @@ function FilterPopover({ label, active, children }: { label: string; active: num
           <ChevronDown aria-hidden className="size-4" />
         </button>
       </PopoverTrigger>
-      <PopoverContent>{children}</PopoverContent>
+      {/* Two columns of color names ("Heather grey", "Black wash") need more than w-72. */}
+      <PopoverContent className={cn(wide && "w-96 max-w-[calc(100vw-2rem)]")}>{children}</PopoverContent>
     </Popover>
   );
 }

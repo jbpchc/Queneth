@@ -74,10 +74,10 @@ export function InventoryView() {
             <thead className="border-b border-border text-left text-ink-muted">
               <tr>
                 <th className="px-4 py-3 font-semibold">Product</th>
-                <th className="py-3 font-semibold">SKU</th>
-                <th className="py-3 text-right font-semibold">Price</th>
+                <th className="px-3 py-3 font-semibold">SKU</th>
+                <th className="px-3 py-3 text-right font-semibold">Price</th>
                 <th className="w-28 py-3 text-right font-semibold">Stock</th>
-                <th className="w-28 py-3 pr-4 text-right font-semibold">Alert at</th>
+                <th className="w-28 whitespace-nowrap py-3 pr-4 text-right font-semibold">Alert at</th>
               </tr>
             </thead>
             <tbody>
@@ -98,8 +98,8 @@ export function InventoryView() {
                         </span>
                       </Link>
                     </td>
-                    <td className="tabular py-2.5 text-ink-muted">{r.sku}</td>
-                    <td className="tabular py-2.5 text-right">{formatQc(r.price_qc)}</td>
+                    <td className="tabular whitespace-nowrap px-3 py-2.5 text-ink-muted">{r.sku}</td>
+                    <td className="tabular whitespace-nowrap px-3 py-2.5 text-right">{formatQc(r.price_qc)}</td>
                     <td className="py-2.5 text-right">
                       <Input aria-label={`Stock for ${r.product_title} ${Object.values(r.options).join(" ")}`} inputMode="numeric" value={stock}
                         onChange={(ev) => set(r.variant_id, { stock: ev.target.value.replace(/\D/g, "").slice(0, 4) })} className="tabular h-10 w-24 text-right" />

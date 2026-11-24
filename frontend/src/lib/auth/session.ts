@@ -1,12 +1,14 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
 
 import { api, type ApiSchemas } from "@/lib/api/client";
 
 export type Me = ApiSchemas["MeOut"];
 export type Role = Me["roles"][number];
 export const ME_KEY = ["me"] as const;
+const noop = () => () => {};
 
 /**
  * The signed-in user, `null` for guests. Permissions come from the API so the
@@ -23,10 +25,14 @@ export function useSession() {
     },
     staleTime: 60_000,
   });
-  const user = query.data ?? null;
+  // The server renders every page as "loading" (it has no session). Parts of a
+  // page can hydrate late (streaming), after /me has resolved, so report
+  // "loading" while hydrating too; otherwise React sees a mismatch.
+  const hydrated = useSyncExternalStore(noop, () => true, () => false);
+  const user = hydrated ? (query.data ?? null) : null;
   return {
     user,
-    status: query.isPending ? "loading" : user ? "authenticated" : "guest",
+    status: !hydrated || query.isPending ? "loading" : user ? "authenticated" : "guest",
     hasRole: (role: Role) => !!user?.roles.includes(role),
     can: (permission: string) => !!user?.permissions.includes(permission),
     refetch: query.refetch,
