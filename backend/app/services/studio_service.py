@@ -346,11 +346,27 @@ async def _drop_products(
     return products
 
 
-def _schedule(products: list[Product], starts_at: datetime) -> None:
-    """Products publish when the drop starts (spec: real countdowns, no early peeks)."""
+def _on_sale(p: Product, now: datetime) -> bool:
+    """Already public (published before now): a drop must not take it off sale."""
+    return (
+        p.status == "active" and p.published_at is not None and as_aware(p.published_at) <= now
+    )
+
+
+def _schedule(products: list[Product], starts_at: datetime, now: datetime) -> None:
+    """New pieces publish when the drop starts (spec: real countdowns, no early
+    peeks). Pieces already on sale stay on sale; the drop just features them."""
     for p in products:
-        p.status = "active"
-        p.published_at = starts_at
+        if not _on_sale(p, now):
+            p.status = "active"
+            p.published_at = starts_at
+
+
+def _unschedule(products: list[Product], now: datetime) -> None:
+    """Pieces leaving a drop go back to drafts only if they were never live."""
+    for p in products:
+        if not _on_sale(p, now):
+            p.status, p.published_at = "draft", None
 
 
 async def save_drop(
@@ -381,9 +397,7 @@ async def save_drop(
         await session.flush()
     else:
         # Pieces taken out of the drop go back to drafts (they were never live).
-        removed = [p for p in d.products if p.id not in {x.id for x in products}]
-        for p in removed:
-            p.status, p.published_at = "draft", None
+        _unschedule([p for p in d.products if p.id not in {x.id for x in products}], now)
         await session.execute(delete(drop_products).where(drop_products.c.drop_id == d.id))
     d.title = body.title
     d.description = (body.description or "").strip() or None
@@ -398,7 +412,7 @@ async def save_drop(
     await session.execute(
         insert(drop_products), [{"drop_id": d.id, "product_id": p.id} for p in products]
     )
-    _schedule(products, starts)
+    _schedule(products, starts, now)
     await session.commit()
     await session.refresh(d, ["products"])
     return d
@@ -409,8 +423,7 @@ async def delete_drop(session: AsyncSession, user: User, drop_id: uuid.UUID) -> 
     d = await _owned_drop(session, user, drop_id)
     if drop_state(d) != "scheduled":
         raise Conflict("Live or ended drops stay on record.", code="drop_started")
-    for p in d.products:
-        p.status, p.published_at = "draft", None
+    _unschedule(list(d.products), utcnow())
     await session.delete(d)
     await session.commit()
 

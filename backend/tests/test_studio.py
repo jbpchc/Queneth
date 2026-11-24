@@ -416,6 +416,33 @@ async def test_cancelling_a_scheduled_drop_returns_pieces_to_drafts(client, shop
     assert p.status == "draft" and p.published_at is None
 
 
+async def test_a_live_piece_in_a_drop_stays_on_sale(client, shop):
+    """Featuring a piece that is already selling must not take it off sale,
+    and cancelling the drop must not turn it back into a draft."""
+    live = await ready_product(client, shop, publish=True)
+    url = f"/api/v1/catalog/products/{live['slug']}"
+    assert (await client.get(url)).status_code == 200
+    drop = (
+        await client.post(
+            f"{S}/drops",
+            json={
+                "title": "Best Sellers",
+                "starts_at": (utcnow() + timedelta(days=1)).isoformat(),
+                "product_ids": [live["id"]],
+            },
+        )
+    ).json()
+    assert (await client.get(url)).status_code == 200
+    assert (await client.delete(f"{S}/drops/{drop['id']}")).status_code == 204
+    p = await shop.scalar(
+        select(Product)
+        .where(Product.id == uuid.UUID(live["id"]))
+        .execution_options(populate_existing=True)
+    )
+    assert p.status == "active" and p.published_at is not None
+    assert (await client.get(url)).status_code == 200
+
+
 # ─── Vouchers ──────────────────────────────────────────────────────────────
 
 

@@ -86,7 +86,7 @@ function DropRow({ d, onEdit }: { d: StudioDrop; onEdit: () => void }) {
           <div className="flex">
             <Button size="icon" variant="ghost" aria-label={`Edit ${d.title}`} onClick={onEdit}><Pencil aria-hidden /></Button>
             <Button size="icon" variant="ghost" aria-label={`Cancel ${d.title}`} className="text-ink-muted hover:text-danger"
-              onClick={() => remove.mutate(d.id, { onSuccess: () => toast.success("Drop cancelled", { description: "Its pieces are back in your drafts." }), onError: (e) => toast.error(toApiError(e).message) })}>
+              onClick={() => remove.mutate(d.id, { onSuccess: () => toast.success("Drop cancelled", { description: "Pieces that weren't on sale yet are back in your drafts." }), onError: (e) => toast.error(toApiError(e).message) })}>
               <Trash2 aria-hidden />
             </Button>
           </div>

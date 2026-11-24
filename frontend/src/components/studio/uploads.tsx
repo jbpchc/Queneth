@@ -15,6 +15,8 @@ export interface GalleryItem {
   url: string;
   assetId?: string;
   text: string; // alt text (products) or caption (lookbook)
+  /** Product photos: the variant color the photo shows (switches with the swatch). */
+  color?: string | null;
 }
 
 function useUploader(purpose: MediaPurpose) {
@@ -102,6 +104,7 @@ export function SortableImages({
   max,
   textLabel,
   textPlaceholder,
+  colors,
 }: {
   label: string;
   purpose: MediaPurpose;
@@ -110,6 +113,8 @@ export function SortableImages({
   max: number;
   textLabel: string;
   textPlaceholder?: string;
+  /** When given, each photo can be tagged with the color it shows. */
+  colors?: string[];
 }) {
   const id = useId();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -157,6 +162,19 @@ export function SortableImages({
               onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))}
               className="h-10 text-small"
             />
+            {colors && colors.length > 0 && (
+              <select
+                aria-label={`Color shown in image ${i + 1}`}
+                value={it.color && colors.includes(it.color) ? it.color : ""}
+                onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, color: e.target.value || null } : x)))}
+                className="h-10 rounded-input border border-border bg-surface px-2 text-small text-ink"
+              >
+                <option value="">Any color</option>
+                {colors.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            )}
             <div className="flex items-center">
               <button type="button" aria-label={`Move image ${i + 1} earlier`} disabled={i === 0} onClick={() => move(i, i - 1)} className="grid size-11 place-items-center rounded-full disabled:opacity-30 hover:bg-surface-muted">
                 <ArrowLeft aria-hidden className="size-4" />

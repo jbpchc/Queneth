@@ -74,7 +74,7 @@ function fromProduct(p: StudioProduct): Draft {
     authenticity: p.authenticity_note ?? "",
     tags: p.tags.join(", "),
     attributes: p.attributes,
-    images: p.images.map((i, n) => ({ key: `img-${n}-${i.url}`, url: i.url, text: i.alt })),
+    images: p.images.map((i, n) => ({ key: `img-${n}-${i.url}`, url: i.url, text: i.alt, color: i.color ?? null })),
     rows: p.variants.map((v) => ({
       key: v.id,
       id: v.id,
@@ -105,6 +105,8 @@ function toPatch(d: Draft, axes: string[]): ApiSchemas["ProductPatch"] {
     images: d.images.map((i, n) => ({
       ...(i.assetId ? { asset_id: i.assetId } : { url: i.url }),
       alt: i.text.trim().length >= 3 ? i.text.trim() : `${d.title || "Product"}, photo ${n + 1}`,
+      // Keep the color tag: the shop shows this photo when that swatch is picked.
+      color: i.color || null,
     })),
   };
   // Half-typed variant rows are held back so they never fail a save.
@@ -288,7 +290,25 @@ function Editor({ meta, initial }: { meta: StudioMeta; initial: StudioProduct })
         )}
 
         {step === "media" && (
-          <SortableImages label="Photos" purpose="product" items={d.images} onChange={(images) => set({ images })} max={10} textLabel="Alt text" textPlaceholder="Describe the photo" />
+          <div className="flex flex-col gap-3">
+            <SortableImages
+              label="Photos"
+              purpose="product"
+              items={d.images}
+              onChange={(images) => set({ images })}
+              max={10}
+              textLabel="Alt text"
+              textPlaceholder="Describe the photo"
+              colors={[...new Set(d.rows.map((r) => r.options.color).filter((c): c is string => !!c))]}
+            />
+            {axes.includes("color") && (
+              <p className="text-caption text-ink-muted">
+                {d.rows.some((r) => r.options.color)
+                  ? "Tag each photo with the color it shows, so shoppers see the right photo when they pick a swatch."
+                  : "Add colors in Variants & stock, then come back to tag each photo with its color."}
+              </p>
+            )}
+          </div>
         )}
 
         {step === "variants" && <VariantsStep axes={axes} rows={d.rows} onChange={(rows) => set({ rows })} />}
