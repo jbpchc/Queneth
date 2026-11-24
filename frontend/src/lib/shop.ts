@@ -73,22 +73,25 @@ export function useToggleWishlist() {
 }
 
 /** The bag, kept in sync with the header badge. */
-export function useBag() {
+/** The bag, or with `items` only those lines (the "Buy now" checkout). */
+export function useBag(items?: string[]) {
   const { status, can } = useSession();
   const setCount = useBagUi((s) => s.setCount);
+  const only = items?.length ? items : undefined;
   const query = useQuery({
-    queryKey: BAG_KEY,
+    queryKey: only ? [...BAG_KEY, { only }] : BAG_KEY,
     enabled: status === "authenticated" && can("cart:manage"),
     queryFn: async () => {
-      const { data, error } = await api.GET("/api/v1/cart");
+      const { data, error } = await api.GET("/api/v1/cart", { params: { query: { items: only } } });
       if (error || !data) throw error;
       return data;
     },
   });
   useEffect(() => {
+    if (only) return; // a "Buy now" slice isn't the bag count
     if (query.data) setCount(query.data.item_count);
     if (status === "guest") setCount(0);
-  }, [query.data, status, setCount]);
+  }, [query.data, status, setCount, only]);
   return query;
 }
 
@@ -97,8 +100,10 @@ export function useAddToBag() {
   const bump = useBagUi((s) => s.bump);
   const setCount = useBagUi((s) => s.setCount);
   return useMutation({
-    mutationFn: async ({ variantId, qty = 1 }: { variantId: string; qty?: number }) => {
-      const { data, error } = await api.POST("/api/v1/cart/items", { body: { variant_id: variantId, qty } });
+    mutationFn: async ({ variantId, qty = 1, buyNow = false }: { variantId: string; qty?: number; buyNow?: boolean }) => {
+      const { data, error } = await api.POST("/api/v1/cart/items", {
+        body: { variant_id: variantId, qty, buy_now: buyNow },
+      });
       if (error || !data) throw error;
       return data;
     },

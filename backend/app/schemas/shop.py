@@ -74,6 +74,9 @@ class SaveForLater(ApiModel):
 class AddToBag(ApiModel):
     variant_id: uuid.UUID
     qty: int = Field(default=1, ge=1, le=10)
+    #: "Buy now": set the line to exactly `qty` (instead of adding to what's
+    #: there) so checkout of just this line buys what the shopper chose.
+    buy_now: bool = False
 
 
 class SetQty(ApiModel):

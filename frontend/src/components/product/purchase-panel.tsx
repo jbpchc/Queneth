@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlert, CircleCheck, CircleX, ShoppingBag } from "lucide-react";
+import { CircleAlert, CircleCheck, CircleX, ShoppingBag, Zap } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -58,6 +58,7 @@ export function PurchasePanel({ product, sizeHelp }: { product: Detail; sizeHelp
   });
   const [missing, setMissing] = useState<string | null>(null);
   const add = useAddToBag();
+  const [buying, setBuying] = useState(false);
   const { remove } = useBagLine();
   const { status, can } = useSession();
   const router = useRouter();
@@ -84,21 +85,43 @@ export function PurchasePanel({ product, sizeHelp }: { product: Detail; sizeHelp
     if (axis === "color" || axis === "metal") setColor(value);
   }
 
-  async function addToBag() {
+  /** The chosen variant once every option is picked and the shopper is signed in. */
+  function ready(signInTitle: string): Variant | null {
     const need = axes.find((a) => !selected[a]);
     if (need) {
       setMissing(need);
       document.getElementById(`axis-${need}`)?.focus();
-      return;
+      return null;
     }
-    if (!variant) return;
+    if (!variant) return null;
     if (status !== "authenticated") {
-      toast("Sign in to add to your bag", {
-        description: "Your bag is saved to your account.",
+      toast(signInTitle, {
+        description: "Your bag and orders are saved to your account.",
         action: { label: "Sign in", onClick: () => router.push(`/login?next=/p/${product.slug}`) },
       });
-      return;
+      return null;
     }
+    return variant;
+  }
+
+  /** Buy now: put exactly this piece in the bag and check out only it. */
+  async function buyNow() {
+    const variant = ready("Sign in to buy");
+    if (!variant) return;
+    try {
+      const bag = await add.mutateAsync({ variantId: variant.id, buyNow: true });
+      const line = bag.groups.flatMap((g) => g.items).find((i) => i.variant_id === variant.id);
+      if (!line) throw new Error("This piece couldn't be added.");
+      setBuying(true);
+      router.push(`/checkout?items=${line.id}`);
+    } catch (err) {
+      toast.error("Couldn't start checkout", { description: toApiError(err).message });
+    }
+  }
+
+  async function addToBag() {
+    const variant = ready("Sign in to add to your bag");
+    if (!variant) return;
     try {
       const bag = await add.mutateAsync({ variantId: variant.id });
       const line = bag.groups.flatMap((g) => g.items).find((i) => i.variant_id === variant.id);
@@ -122,18 +145,25 @@ export function PurchasePanel({ product, sizeHelp }: { product: Detail; sizeHelp
         : { icon: CircleCheck, text: "In stock · ships in 2–4 days", tone: "text-success" };
   const StockIcon = stockState.icon;
 
-  const cta = (
-    <Button
-      variant="primary"
-      size="lg"
-      block
-      onClick={addToBag}
-      loading={add.isPending}
-      disabled={soldOut || stock === 0 || !shopper}
-    >
+  const unavailable = soldOut || stock === 0 || !shopper;
+  const pending = add.isPending || buying;
+  // Two ways to order: keep shopping (Add to Bag) or go straight to paying (Buy now).
+  const cta = unavailable ? (
+    <Button variant="primary" size="lg" block disabled>
       <ShoppingBag aria-hidden />
-      {soldOut ? "Sold out" : !shopper ? "Shopping is for buyer accounts" : `Add to Bag · ${formatQc(price)}`}
+      {soldOut ? "Sold out" : !shopper ? "Shopping is for buyer accounts" : "This option is sold out"}
     </Button>
+  ) : (
+    <div className="grid grid-cols-2 gap-3">
+      <Button variant="outline" size="lg" block onClick={addToBag} disabled={pending} loading={add.isPending && !add.variables?.buyNow}>
+        <ShoppingBag aria-hidden />
+        Add to Bag
+      </Button>
+      <Button variant="primary" size="lg" block onClick={buyNow} disabled={pending} loading={buying || (add.isPending && !!add.variables?.buyNow)}>
+        <Zap aria-hidden />
+        Buy now
+      </Button>
+    </div>
   );
 
   return (

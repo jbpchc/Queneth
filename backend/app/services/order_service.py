@@ -116,13 +116,16 @@ async def _new_number(session: AsyncSession) -> str:
     raise Conflict("Please try again.", code="order_number_busy")  # pragma: no cover
 
 
-async def _lock_bag(session: AsyncSession, user: User) -> list[_Line]:
+async def _lock_bag(
+    session: AsyncSession, user: User, only: list[uuid.UUID] | None = None
+) -> list[_Line]:
     rows = (
         await session.execute(
             select(CartItem, Variant, Product)
             .join(Variant, Variant.id == CartItem.variant_id)
             .join(Product, Product.id == Variant.product_id)
             .where(CartItem.user_id == user.id, CartItem.saved_for_later.is_(False))
+            .where(CartItem.id.in_(only) if only else True)
             .order_by(Variant.id)  # stable lock order: no deadlocks between buyers
             .with_for_update(of=Variant)
         )
@@ -215,7 +218,7 @@ async def checkout(
 
     try:
         async with atomic(session):
-            lines = await _lock_bag(session, user)
+            lines = await _lock_bag(session, user, body.item_ids)
             _check_lines(user, lines)
             groups = await _group(session, user, lines)
             subtotal = sum(g.items_total for g in groups)
@@ -246,7 +249,8 @@ async def checkout(
                 shipping_address=address.snapshot(),
                 idempotency_key=key,
                 status=OrderStatus.PAID.value,
-                points_pending=total // POINTS_PER_QC,
+                # Points are credited per boutique on delivery, so round per boutique too.
+                points_pending=sum(g.subtotal // POINTS_PER_QC for g in groups),
             )
             session.add(order)
             await session.flush()
@@ -279,7 +283,11 @@ async def checkout(
                 )
                 for line in group.lines:
                     p, v, qty = line.product, line.variant, line.cart_item.qty
-                    image = p.images[0].url if p.images else None
+                    # The photo of the color bought, when the boutique tagged one.
+                    color = v.options.get("color")
+                    pic = next((i for i in p.images if color and i.color == color), None)
+                    pic = pic or (p.images[0] if p.images else None)
+                    image = pic.url if pic else None
                     session.add(
                         OrderItem(
                             sub_order_id=sub.id,

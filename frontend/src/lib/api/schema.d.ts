@@ -2391,6 +2391,11 @@ export interface components {
              * @default 1
              */
             qty?: number;
+            /**
+             * Buy Now
+             * @default false
+             */
+            buy_now?: boolean;
         };
         /** AddressIn */
         AddressIn: {
@@ -3121,6 +3126,8 @@ export interface components {
             pin: string;
             /** Expected Total Qc */
             expected_total_qc: number;
+            /** Item Ids */
+            item_ids?: string[] | null;
         };
         /**
          * CloudinaryResult
@@ -8737,7 +8744,10 @@ export interface operations {
     };
     get_bag_api_v1_cart_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Only these lines (the "Buy now" checkout) */
+                items?: string[] | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;

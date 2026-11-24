@@ -93,6 +93,9 @@ class CheckoutRequest(ApiModel):
     pin: str = Field(min_length=6, max_length=11)
     #: The total the buyer reviewed. If prices changed since, checkout stops (409).
     expected_total_qc: int = Field(ge=0)
+    #: Pay for only these bag lines ("Buy now"); everything else stays in the bag.
+    #: Omitted: the whole bag.
+    item_ids: list[uuid.UUID] | None = Field(default=None, min_length=1, max_length=50)
 
 
 class OrderItemOut(ApiModel):

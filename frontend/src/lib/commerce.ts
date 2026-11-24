@@ -189,21 +189,27 @@ export function useCheckout() {
   const qc = useQueryClient();
   const setCount = useBagUi((s) => s.setCount);
   return useMutation({
-    mutationFn: async (vars: { addressId: string; pin: string; total: number; key: string }) => {
+    mutationFn: async (vars: { addressId: string; pin: string; total: number; key: string; itemIds?: string[] }) => {
       const { data, error } = await api.POST("/api/v1/orders/checkout", {
-        body: { address_id: vars.addressId, pin: vars.pin, expected_total_qc: vars.total },
+        body: {
+          address_id: vars.addressId,
+          pin: vars.pin,
+          expected_total_qc: vars.total,
+          item_ids: vars.itemIds?.length ? vars.itemIds : null,
+        },
         params: { header: { "Idempotency-Key": vars.key } },
       });
       if (error || !data) throw error;
       return data;
     },
-    onSuccess: (order) => {
+    onSuccess: (order, vars) => {
       qc.setQueryData(["orders", order.id], order);
       qc.invalidateQueries({ queryKey: BAG_KEY });
       qc.invalidateQueries({ queryKey: ["wallet"] });
       qc.invalidateQueries({ queryKey: ["orders", "list"] });
       qc.invalidateQueries({ queryKey: ["notifications"] });
-      setCount(0);
+      // "Buy now" leaves the rest of the bag; the refetch above sets the count.
+      if (!vars.itemIds?.length) setCount(0);
     },
   });
 }

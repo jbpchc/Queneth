@@ -8,7 +8,14 @@ from sqlalchemy import func, select
 from app.core.security import utcnow
 from app.db.atomic import atomic
 from app.models import SystemWallet, User, Wallet
-from app.models.catalog import CartItem, Product, SellerProfile, Variant, WishlistItem
+from app.models.catalog import (
+    CartItem,
+    Product,
+    ProductImage,
+    SellerProfile,
+    Variant,
+    WishlistItem,
+)
 from app.models.commerce import Order, SubOrder, Voucher, VoucherRedemption
 from app.models.integration import EmailLog, Notification
 from app.services import wallet_service as ws
@@ -194,7 +201,9 @@ async def test_checkout_splits_per_boutique_into_escrow(client, shop):
     assert res.status_code == 201, res.text
     order = res.json()
     total = a.price_qc * 2 + b.price_qc
-    assert order["total_qc"] == total and order["points_pending"] == total // 100
+    # Points are credited per boutique on delivery, so they round per boutique.
+    points = (a.price_qc * 2) // 100 + b.price_qc // 100
+    assert order["total_qc"] == total and order["points_pending"] == points
     assert order["number"].startswith(f"QN-{utcnow().year}-")
     numbers = [s["number"] for s in order["sub_orders"]]
     assert numbers == [f"{order['number']}-01", f"{order['number']}-02"]
@@ -408,3 +417,62 @@ async def test_wishlist_boards(client, shop):
         f"/api/v1/wishlist/{v.product_id}/board", json={"board_id": board["id"]}
     )
     assert other.status_code == 404
+
+
+async def test_bag_and_order_show_the_photo_of_the_chosen_color(client, shop):
+    """A line shows the photo tagged with its variant's color, not the product's first."""
+    await login(client, BUYER)
+    v = await variant_from(shop, "obra-leather")
+    v.options = {**v.options, "color": "Tan"}
+    shop.add(
+        ProductImage(product_id=v.product_id, url="/tan.webp", alt="Tan", position=99, color="Tan")
+    )
+    await shop.commit()
+
+    bag = await add(client, v)
+    assert bag["groups"][0]["items"][0]["product"]["image"]["url"].endswith("/tan.webp")
+    res = await pay(client, total=bag["total_qc"], address=await default_address(client))
+    assert res.status_code == 201, res.text
+    assert res.json()["sub_orders"][0]["items"][0]["image"].endswith("/tan.webp")
+
+
+async def test_buy_now_pays_for_one_line_and_keeps_the_rest_of_the_bag(client, shop):
+    await login(client, BUYER)
+    keep = await variant_from(shop, "obra-leather")
+    buy = await variant_from(shop, "nocturne-parfums")
+    await add(client, keep)
+    await add(client, buy, 2)
+
+    # "Buy now" sets the line to exactly the chosen quantity (not 2 + 1).
+    res = await client.post(
+        f"{CART}/items", json={"variant_id": str(buy.id), "qty": 1, "buy_now": True}
+    )
+    assert res.status_code == 201, res.text
+    line = next(
+        i for g in res.json()["groups"] for i in g["items"] if i["variant_id"] == str(buy.id)
+    )
+    assert line["qty"] == 1
+
+    # The checkout quote covers only that line.
+    quote = (await client.get(CART, params={"items": line["id"]})).json()
+    assert quote["item_count"] == 1 and quote["total_qc"] == buy.price_qc
+
+    before = await balance(shop, BUYER)
+    res = await client.post(
+        f"{ORDERS}/checkout",
+        json={
+            "address_id": await default_address(client),
+            "pin": "123456",
+            "expected_total_qc": quote["total_qc"],
+            "item_ids": [line["id"]],
+        },
+        headers=idem(),
+    )
+    assert res.status_code == 201, res.text
+    order = res.json()
+    assert order["total_qc"] == buy.price_qc and len(order["sub_orders"]) == 1
+    assert await balance(shop, BUYER) == before - buy.price_qc
+
+    # The other piece is still in the bag.
+    bag = (await client.get(CART)).json()
+    assert [i["variant_id"] for g in bag["groups"] for i in g["items"]] == [str(keep.id)]

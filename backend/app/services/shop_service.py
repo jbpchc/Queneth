@@ -127,7 +127,13 @@ async def wishlist(session: AsyncSession, catalog: CatalogService, user: User) -
 # ─── Bag ───────────────────────────────────────────────────────────────────
 
 
-async def bag(session: AsyncSession, catalog: CatalogService, user: User) -> BagOut:
+async def bag(
+    session: AsyncSession,
+    catalog: CatalogService,
+    user: User,
+    only: list[uuid.UUID] | None = None,
+) -> BagOut:
+    """The bag, or with `only` just those lines (the "Buy now" checkout)."""
     assert_can(user, Permission.CART_MANAGE)
     rows = (
         await session.execute(
@@ -135,6 +141,7 @@ async def bag(session: AsyncSession, catalog: CatalogService, user: User) -> Bag
             .join(Variant, Variant.id == CartItem.variant_id)
             .join(Product, Product.id == Variant.product_id)
             .where(CartItem.user_id == user.id)
+            .where(CartItem.id.in_(only) if only else True)
             .order_by(CartItem.created_at)
         )
     ).all()
@@ -156,7 +163,7 @@ async def bag(session: AsyncSession, catalog: CatalogService, user: User) -> Bag
             line_total_qc=variant.price_qc * item.qty,
             stock=variant.stock,
             available=available,
-            product=catalog.card(product, live),
+            product=catalog.card(product, live, color=variant.options.get("color")),
         )
         if item.saved_for_later:
             saved.append(line)
@@ -196,7 +203,10 @@ async def bag(session: AsyncSession, catalog: CatalogService, user: User) -> Bag
     )
 
 
-async def add_to_bag(session: AsyncSession, user: User, variant_id: uuid.UUID, qty: int) -> None:
+async def add_to_bag(
+    session: AsyncSession, user: User, variant_id: uuid.UUID, qty: int, *, buy_now: bool = False
+) -> CartItem:
+    """Adds `qty` to the line (or, for "Buy now", sets it to `qty`); returns the line."""
     assert_can(user, Permission.CART_MANAGE)
     variant = await session.get(Variant, variant_id)
     if variant is None:
@@ -207,7 +217,7 @@ async def add_to_bag(session: AsyncSession, user: User, variant_id: uuid.UUID, q
     item = await session.scalar(
         select(CartItem).where(CartItem.user_id == user.id, CartItem.variant_id == variant_id)
     )
-    wanted = qty + (item.qty if item else 0)
+    wanted = qty if buy_now else qty + (item.qty if item else 0)
     if variant.stock <= 0:
         raise Conflict("This size just sold out.", code="sold_out")
     if wanted > variant.stock:
@@ -222,7 +232,8 @@ async def add_to_bag(session: AsyncSession, user: User, variant_id: uuid.UUID, q
         item.qty = wanted
         item.saved_for_later = False  # adding again brings it back into the bag
     else:
-        session.add(CartItem(user_id=user.id, variant_id=variant_id, qty=qty))
+        item = CartItem(user_id=user.id, variant_id=variant_id, qty=qty)
+        session.add(item)
     # Seller funnel: views → wishlists → bag adds → orders.
     await session.execute(
         update(Product)
@@ -230,6 +241,7 @@ async def add_to_bag(session: AsyncSession, user: User, variant_id: uuid.UUID, q
         .values(bag_add_count=Product.bag_add_count + 1)
     )
     await session.commit()
+    return item
 
 
 async def set_qty(session: AsyncSession, user: User, item_id: uuid.UUID, qty: int) -> None:

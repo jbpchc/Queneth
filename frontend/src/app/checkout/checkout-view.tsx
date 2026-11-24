@@ -35,10 +35,12 @@ const STEPS = ["Address", "Review", "Pay"] as const;
  * UX: Doherty Threshold — the Pay button shows progress instantly and the
  *     idempotency key makes a double-click or a retry safe.
  */
-export function CheckoutView() {
+export function CheckoutView({ items = [] }: { items?: string[] }) {
   const router = useRouter();
   const { status, user } = useSession();
-  const bag = useBag();
+  // "Buy now" checks out only the chosen line; the rest of the bag stays put.
+  const buyNow = items.length > 0;
+  const bag = useBag(buyNow ? items : undefined);
   const wallet = useWallet();
   const addresses = useAddresses();
   const checkout = useCheckout();
@@ -54,8 +56,8 @@ export function CheckoutView() {
   const attempt = useRef<string>(newKey());
 
   useEffect(() => {
-    if (status === "guest") router.replace("/login?next=/checkout");
-  }, [status, router]);
+    if (status === "guest") router.replace(`/login?next=${encodeURIComponent(buyNow ? `/checkout?items=${items.join(",")}` : "/checkout")}`);
+  }, [status, router, buyNow, items]);
 
   // Pre-select the default address once addresses arrive.
   useEffect(() => {
@@ -105,7 +107,14 @@ export function CheckoutView() {
 
   const data = bag.data;
   if (data.groups.length === 0) {
-    return (
+    return buyNow ? (
+      <EmptyState
+        icon={ShoppingBag}
+        title="This piece isn't in your bag anymore"
+        description="It may already be paid for, or it was removed. Check your orders or your bag."
+        action={<Button asChild variant="secondary"><Link href="/account/orders">View orders</Link></Button>}
+      />
+    ) : (
       <EmptyState
         icon={ShoppingBag}
         title="Your bag is empty"
@@ -129,6 +138,7 @@ export function CheckoutView() {
         pin,
         total: data.total_qc,
         key: attempt.current,
+        itemIds: buyNow ? items : undefined,
       });
       router.replace(`/checkout/success/${order.id}`);
     } catch (err) {
@@ -155,7 +165,13 @@ export function CheckoutView() {
         <nav aria-label="Breadcrumb" className="text-small text-ink-muted">
           <Link href="/bag" className="hover:underline">Bag</Link> / Checkout
         </nav>
-        <h1 className="text-h1 text-ink">Checkout</h1>
+        <h1 className="text-h1 text-ink">{buyNow ? "Buy now" : "Checkout"}</h1>
+        {buyNow && (
+          <p className="text-small text-ink-muted">
+            You&apos;re paying for this piece only. Anything else in your bag stays there.{" "}
+            <Link href="/checkout" className="font-semibold text-accent-2 underline">Check out the whole bag instead</Link>
+          </p>
+        )}
         <Progress
           value={step + 1}
           max={3}
@@ -304,7 +320,7 @@ export function CheckoutView() {
               )}
               <div className="flex justify-between"><dt className="text-ink-muted">Shipping</dt><dd>Included</dd></div>
               <div className="flex justify-between border-t border-border pt-3 text-h3 font-bold"><dt>Total</dt><dd className="tabular">{formatQc(data.total_qc)}</dd></div>
-              <div className="flex justify-between text-ink-muted"><dt>Que Points on delivery</dt><dd className="tabular">+{Math.floor(data.total_qc / 100).toLocaleString()}</dd></div>
+              <div className="flex justify-between text-ink-muted"><dt>Que Points on delivery</dt><dd className="tabular">+{data.groups.reduce((n, g) => n + Math.floor(g.total_qc / 100), 0).toLocaleString()}</dd></div>
             </dl>
             <p className="flex items-start gap-2 text-caption text-ink-muted">
               <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-success" />

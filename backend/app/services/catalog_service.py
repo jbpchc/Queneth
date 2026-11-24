@@ -216,8 +216,13 @@ class CatalogService:
             out.append("connoisseur_pick")
         return out
 
-    def card(self, p: Product, live_drop_ids: set[uuid.UUID]) -> ProductCard:
-        images = p.images or []
+    def card(
+        self, p: Product, live_drop_ids: set[uuid.UUID], color: str | None = None
+    ) -> ProductCard:
+        """`color` (a bag or order line's variant color) puts that color's photos first."""
+        images = list(p.images or [])
+        if color and any(i.color == color for i in images):
+            images.sort(key=lambda i: i.color != color)  # stable: keeps photo order
         first = images[0] if images else None
         # Hover shows another angle (the close-up), cross-faded in by the UI.
         hover = images[1] if len(images) > 1 else None

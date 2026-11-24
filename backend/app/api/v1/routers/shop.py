@@ -1,6 +1,6 @@
 import uuid
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import AppSettings, DbSession, require_permission
 from app.core.permissions import Permission
@@ -50,8 +50,15 @@ async def unsave(product_id: uuid.UUID, session: DbSession, user: User = Shopper
 
 
 @cart_router.get("", response_model=BagOut, summary="Your bag, grouped by boutique")
-async def get_bag(session: DbSession, settings: AppSettings, user: User = BagUser) -> BagOut:
-    return await shop_service.bag(session, CatalogService(session, settings), user)
+async def get_bag(
+    session: DbSession,
+    settings: AppSettings,
+    user: User = BagUser,
+    items: list[uuid.UUID] | None = Query(
+        default=None, max_length=50, description='Only these lines (the "Buy now" checkout)'
+    ),
+) -> BagOut:
+    return await shop_service.bag(session, CatalogService(session, settings), user, items)
 
 
 @cart_router.post(
@@ -60,7 +67,7 @@ async def get_bag(session: DbSession, settings: AppSettings, user: User = BagUse
 async def add(
     body: AddToBag, session: DbSession, settings: AppSettings, user: User = BagUser
 ) -> BagOut:
-    await shop_service.add_to_bag(session, user, body.variant_id, body.qty)
+    await shop_service.add_to_bag(session, user, body.variant_id, body.qty, buy_now=body.buy_now)
     return await shop_service.bag(session, CatalogService(session, settings), user)
 
 
