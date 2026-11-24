@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, House, Search, ShoppingBag, User } from "lucide-react";
+import { Bell, Heart, House, Search, ShieldCheck, ShoppingBag, Store, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,18 +14,38 @@ import { cn } from "@/lib/utils";
  * UX: Serial Position effect — Home first, Profile last.
  * UX: Fitts's Law — each tab is a full-height thumb target in the easy reach zone.
  */
-const tabs = [
-  { href: "/", label: "Home", icon: House, match: (p: string) => p === "/" },
-  { href: "/search", label: "Search", icon: Search, match: (p: string) => p.startsWith("/search") },
+const home = { href: "/", label: "Home", icon: House, match: (p: string) => p === "/" };
+const search = { href: "/search", label: "Search", icon: Search, match: (p: string) => p.startsWith("/search") };
+const profile = { href: "/account", label: "Profile", icon: User, match: (p: string) => p === "/account" };
+
+// Each account type gets its own tabs: only buyers (and guests) shop.
+const shopperTabs = [
+  home,
+  search,
   { href: "/wishlist", label: "Wishlist", icon: Heart, match: (p: string) => p.startsWith("/wishlist") },
   { href: "/bag", label: "Bag", icon: ShoppingBag, match: (p: string) => p.startsWith("/bag") },
-  { href: "/account", label: "Profile", icon: User, match: (p: string) => p.startsWith("/account") },
-] as const;
+  { ...profile, match: (p: string) => p.startsWith("/account") },
+];
+const sellerTabs = [
+  home,
+  search,
+  { href: "/seller", label: "Studio", icon: Store, match: (p: string) => p.startsWith("/seller") },
+  { href: "/account/wallet", label: "Wallet", icon: Wallet, match: (p: string) => p.startsWith("/account/wallet") },
+  profile,
+];
+const adminTabs = [
+  home,
+  search,
+  { href: "/admin", label: "Control", icon: ShieldCheck, match: (p: string) => p.startsWith("/admin") },
+  { href: "/account/notifications", label: "Inbox", icon: Bell, match: (p: string) => p.startsWith("/account/notifications") },
+  profile,
+];
 
 export function MobileTabBar() {
   const pathname = usePathname();
   const count = useBagUi((s) => s.count);
-  const { status } = useSession();
+  const { status, hasRole } = useSession();
+  const tabs = hasRole("ADMIN") ? adminTabs : hasRole("SELLER") ? sellerTabs : shopperTabs;
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 

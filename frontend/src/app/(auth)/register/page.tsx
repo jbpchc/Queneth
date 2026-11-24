@@ -13,7 +13,8 @@ export default function RegisterPage() {
       <header className="flex flex-col gap-2">
         <h1 className="text-h1 text-ink">Join Queneth.</h1>
         <p className="text-ink-muted">
-          Save pieces to boards, follow boutiques, and shop with QueWallet credits.
+          Shop independent boutiques with QueWallet credits, or open a boutique of your own. Each account is one or
+          the other.
         </p>
       </header>
       <Suspense fallback={<Skeleton className="h-96 w-full" />}>

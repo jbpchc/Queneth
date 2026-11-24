@@ -17,8 +17,7 @@ const columns = [
     links: [
       { label: "Orders", href: "/account/orders" },
       { label: "QueWallet", href: "/account/wallet" },
-      { label: "Rewards", href: "/account/rewards" },
-      { label: "Sell on Queneth", href: "/account/sell" },
+      { label: "Open a boutique", href: "/register?type=seller" },
     ],
   },
   {
@@ -52,6 +51,7 @@ export function SiteFooter() {
                 <li key={l.href}>
                   <Link
                     href={l.href}
+                    prefetch={false} // footer links aren't worth preloading on every page
                     className="inline-flex min-h-11 items-center text-small text-ink hover:text-accent-2 hover:underline hover:underline-offset-4"
                   >
                     {l.label}

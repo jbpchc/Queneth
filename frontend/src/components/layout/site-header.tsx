@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SearchBox } from "@/components/catalog/search-box";
 
 import { useHotkey } from "@/hooks/use-hotkey";
+import { useSession } from "@/lib/auth/session";
 import { useScrolled } from "@/hooks/use-scrolled";
 import type { NavItem } from "@/lib/nav";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const iconLink =
  * The nav comes from the live taxonomy (built server-side in the layout).
  */
 export function SiteHeader({ nav }: { nav: NavItem[] }) {
+  const { shopper } = useSession();
   const scrolled = useScrolled();
   const pathname = usePathname();
   const searchRef = useRef<HTMLInputElement>(null);
@@ -68,14 +70,14 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
     >
       <div
         className={cn(
-          "mx-auto flex max-w-[1536px] items-center gap-4 px-4 transition-[height] duration-[var(--dur-base)] ease-brand sm:px-6 lg:px-10",
+          "mx-auto flex max-w-[1536px] items-center gap-4 px-4 transition-[height] duration-[var(--dur-base)] ease-brand sm:px-6 xl:px-10",
           scrolled ? "h-14" : "h-16 md:h-20",
         )}
       >
         <Logo compact={scrolled} />
 
         <nav aria-label="Primary" className="hidden flex-1 justify-center md:flex">
-          <ul className="flex items-center gap-0.5 lg:gap-1">
+          <ul className="flex items-center gap-0.5 xl:gap-1">
             {nav.map((item) => {
               const active = item.href !== "/" && pathname.startsWith(item.href.split("?")[0]!);
               return (
@@ -99,7 +101,7 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
                     aria-haspopup={item.children?.length ? "true" : undefined}
                     aria-expanded={item.children?.length ? openMenu === item.label : undefined}
                     className={cn(
-                      "relative inline-flex h-11 items-center rounded-pill px-3 text-small font-semibold text-ink-muted transition-colors hover:text-ink lg:px-3.5",
+                      "relative inline-flex h-11 items-center rounded-pill px-3 text-small font-semibold text-ink-muted transition-colors hover:text-ink xl:px-3.5",
                       active && "text-ink",
                       item.label === "New" && "text-ink",
                       item.href === "/deals" && "text-accent",
@@ -147,16 +149,19 @@ export function SiteHeader({ nav }: { nav: NavItem[] }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-1 md:ml-0">
-          <SearchBox ref={searchRef} className="hidden w-64 lg:block xl:w-72" />
-          <Link href="/search" aria-label="Search" className={cn(iconLink, "lg:hidden")}>
+          <SearchBox ref={searchRef} className="hidden w-56 xl:block 2xl:w-72" />
+          <Link href="/search" aria-label="Search" className={cn(iconLink, "xl:hidden")}>
             <Search aria-hidden className="size-5" />
           </Link>
           <ThemeToggle className="hidden sm:grid" />
-          <Link href="/wishlist" aria-label="Wishlist" className={cn(iconLink, "hidden md:grid")}>
-            <Heart aria-hidden className="size-5" />
-          </Link>
+          {/* Wishlist and bag are for shoppers; seller and admin accounts don't shop. */}
+          {shopper && (
+            <Link href="/wishlist" aria-label="Wishlist" className={cn(iconLink, "hidden md:grid")}>
+              <Heart aria-hidden className="size-5" />
+            </Link>
+          )}
           <AccountMenu className="hidden md:grid" />
-          <BagButton />
+          {shopper && <BagButton />}
         </div>
       </div>
     </header>

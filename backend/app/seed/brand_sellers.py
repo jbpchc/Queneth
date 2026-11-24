@@ -31,7 +31,7 @@ from app.models.catalog import (
 from app.schemas.catalog_attributes import validate_attributes
 from app.seed.catalog_data import RETURN_POLICY
 from app.seed.photos import photo
-from app.seed.users import DEMO_PASSWORD
+from app.seed.users import DEMO_PASSWORD, seed_demo_buyers
 from app.seed.wallet import DEMO_PIN
 from app.services import wallet_service as ws
 from app.services.catalog_index import refresh_denormalized
@@ -555,7 +555,7 @@ async def _owner(session: AsyncSession, s: Seller) -> User:
             email=s.email,
             name=s.owner,
             password_hash=hash_password(DEMO_PASSWORD),
-            roles=[Role.BUYER.value, Role.SELLER.value],
+            roles=[Role.SELLER.value],
             email_verified_at=utcnow(),
         )
         session.add(user)
@@ -656,4 +656,6 @@ async def seed_brand_sellers(session: AsyncSession) -> dict[str, int]:
             session.add(p)
             added["products"] += 1
     await session.commit()
+    # The stores are seller-only accounts; add the demo shoppers who buy from them.
+    added["buyers"] = len(await seed_demo_buyers(session))
     return added

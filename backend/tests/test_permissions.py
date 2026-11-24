@@ -42,7 +42,7 @@ def buyer() -> FakeUser:
 
 
 def seller() -> FakeUser:
-    return FakeUser(roles=["BUYER", "SELLER"], seller_id=uuid.uuid4())
+    return FakeUser(roles=["SELLER"], seller_id=uuid.uuid4())
 
 
 def admin() -> FakeUser:
@@ -51,13 +51,16 @@ def admin() -> FakeUser:
 
 # (permission, guest, buyer, seller, admin) — straight from the spec's table.
 MATRIX = [
-    (P.WISHLIST_MANAGE, False, True, True, False),
-    (P.CART_MANAGE, False, True, True, False),
-    (P.BOUTIQUE_FOLLOW, False, True, True, False),
-    (P.ORDER_CHECKOUT, False, True, True, False),
-    (P.REVIEW_WRITE, False, True, True, False),
+    # Shopping is for buyer accounts only: sellers and admins don't shop.
+    (P.WISHLIST_MANAGE, False, True, False, False),
+    (P.CART_MANAGE, False, True, False, False),
+    (P.BOUTIQUE_FOLLOW, False, True, False, False),
+    (P.ORDER_CHECKOUT, False, True, False, False),
+    (P.REVIEW_WRITE, False, True, False, False),
+    (P.WALLET_TOPUP, False, True, False, False),
     (P.REVIEW_MODERATE, False, False, False, True),
-    (P.SELLER_APPLY, False, True, False, False),
+    # Opening a boutique needs a seller account; buyers can't become sellers.
+    (P.SELLER_APPLY, False, False, True, False),
     (P.PRODUCT_CREATE, False, False, True, False),
     (P.PRODUCT_UPDATE, False, False, True, True),
     (P.PRODUCT_ARCHIVE, False, False, True, True),
@@ -116,8 +119,17 @@ def test_seller_a_cannot_edit_seller_b_product():
 
 
 def test_seller_without_profile_owns_nothing():
-    s = FakeUser(roles=["BUYER", "SELLER"], seller_id=None)
+    s = FakeUser(roles=["SELLER"], seller_id=None)
     assert not can(s, P.PRODUCT_UPDATE, FakeProduct(seller_id=uuid.uuid4()))
+
+
+def test_pending_seller_can_apply_but_not_use_studio():
+    pending = FakeUser(roles=["SELLER"], seller_id=None)
+    assert can(pending, P.SELLER_APPLY) and can(pending, P.MEDIA_UPLOAD)
+    assert can(pending, P.WALLET_VIEW) and can(pending, P.PROFILE_MANAGE)
+    for perm in (P.PRODUCT_CREATE, P.INVENTORY_MANAGE, P.ORDER_FULFILL, P.EARNINGS_VIEW):
+        assert not can(pending, perm)
+    assert not can(pending, P.CART_MANAGE)  # seller accounts never shop
 
 
 def test_admin_moderates_any_product():
@@ -139,7 +151,7 @@ def test_buyer_owns_only_their_orders():
 
 
 def test_banned_user_has_no_permissions():
-    banned = FakeUser(roles=["BUYER", "SELLER"], status="banned", seller_id=uuid.uuid4())
+    banned = FakeUser(roles=["SELLER"], status="banned", seller_id=uuid.uuid4())
     assert permissions_for(banned) == set()
     assert not can(banned, P.CART_MANAGE)
 

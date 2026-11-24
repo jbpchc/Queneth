@@ -18,7 +18,7 @@ MAX_ADDRESSES = 10
 
 
 async def list_for(session: AsyncSession, user: User) -> list[Address]:
-    assert_can(user, Permission.PROFILE_MANAGE)
+    assert_can(user, Permission.ORDER_CHECKOUT)
     return list(
         (
             await session.scalars(
@@ -57,7 +57,7 @@ def _apply(address: Address, data: AddressIn, settings: Settings, session: Async
 
 
 async def create(session: AsyncSession, user: User, data: AddressIn, settings: Settings) -> Address:
-    assert_can(user, Permission.PROFILE_MANAGE)
+    assert_can(user, Permission.ORDER_CHECKOUT)
     count = await session.scalar(select(func.count()).where(Address.user_id == user.id)) or 0
     if count >= MAX_ADDRESSES:
         raise Conflict(f"You can save up to {MAX_ADDRESSES} addresses.", code="address_limit")

@@ -45,3 +45,36 @@ async def seed_users(session: AsyncSession) -> list[str]:
         created.append(demo.email)
     await session.commit()
     return created
+
+
+async def seed_demo_buyers(session: AsyncSession) -> list[str]:
+    """The README's shopper accounts (buyer@, collector@), ready to buy: each gets
+    the welcome credit and the demo PIN. Brand stores are seller-only accounts,
+    so a store seeded without the full demo still has buyers to shop with."""
+    from app.seed.wallet import DEMO_PIN
+    from app.services import wallet_service as ws
+
+    await ws.ensure_system_wallets(session)
+    created: list[str] = []
+    for demo in DEMO_USERS:
+        if demo.roles != (Role.BUYER,):
+            continue
+        user = await session.scalar(select(User).where(User.email == demo.email))
+        if user is None:
+            user = User(
+                email=demo.email,
+                name=demo.name,
+                password_hash=hash_password(DEMO_PASSWORD),
+                roles=[Role.BUYER.value],
+                email_verified_at=utcnow(),
+                seller_profile=None,
+            )
+            session.add(user)
+            await session.flush()
+            created.append(demo.email)
+        wallet = await ws.user_wallet(session, user.id)
+        if wallet.pin_hash is None:
+            wallet.pin_hash = hash_password(DEMO_PIN)
+        await ws.grant_welcome(session, user)
+    await session.commit()
+    return created

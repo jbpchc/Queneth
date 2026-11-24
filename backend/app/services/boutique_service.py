@@ -137,8 +137,7 @@ async def decide(
         profile.status = "approved"
         profile.approved_by = admin.id
         profile.approved_at = utcnow()
-        if Role.SELLER.value not in owner.roles:
-            owner.roles = [*owner.roles, Role.SELLER.value]
+        owner.roles = [Role.SELLER.value]  # one role per account: sellers don't shop
         email = email_templates.order_update(
             template="seller_approved",
             name=owner.name,

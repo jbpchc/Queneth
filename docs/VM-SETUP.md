@@ -117,20 +117,24 @@ Starting the storefront (production)…
 4. http://localhost:3000 shows the storefront with 31 pieces.
 5. Sign in as `admin@queneth.test`; the Control Room loads.
 
-| Account | Role | Password |
-| --- | --- | --- |
-| `admin@queneth.test` | Admin (Control Room) | `Queneth#2026` |
-| `nike@` · `bench@` · `penshoppe@queneth.test` | Seller + buyer | `Queneth#2026` |
+Every account is exactly one type: a **buyer** shops, a **seller** runs one boutique, an **admin** runs the marketplace.
 
-QueWallet PIN for every shopper: `123456`. Each wallet starts with QC 50,000.
+| Account | Type | Use it for |
+| --- | --- | --- |
+| `buyer@queneth.test` (Isabela) · `collector@queneth.test` (Marco) | Buyer | Shopping: bag, wishlist, checkout, orders |
+| `nike@` · `bench@` · `penshoppe@queneth.test` | Seller | Seller Studio for each brand store |
+| `admin@queneth.test` | Admin | Control Room |
+
+Password for all: `Queneth#2026`. QueWallet PIN: `123456`. Buyers start with QC 50,000.
 
 ## 8. Live walkthrough (tested end to end)
 
-1. As **nike@**: open Bench's *Pique Polo*, choose size and color, **Add to Bag**.
+1. As **buyer@**: open Bench's *Pique Polo*, choose size and color, **Add to Bag**.
 2. **Bag → Checkout with QueWallet**: add an address (Region → Province → City → Barangay come from the bundled PSGC list), review, enter PIN `123456`, **Pay**. The order shows *Held in escrow*.
 3. Sign out, sign in as **bench@** → **Seller Studio → Orders**: *Start preparing* → *Ship with tracking* → *Mark shipped* → *Mark delivered*.
-4. Sign back in as **nike@** → **Account → Orders** → the order → **I received it**. Escrow is released to Bench (minus 5%) and the buyer earns Que Points.
-5. As **admin@**: **Control Room → QueWallet → Run reconciliation** reports zero drift; **Integrations → Sent emails** shows the order emails (mock mode).
+4. Sign back in as **buyer@** → **Account → Orders** → the order → **I received it**. Escrow is released to Bench (minus 5%) and the buyer earns Que Points.
+5. Show the separation: **bench@** has no bag or wishlist, and its wallet has *Withdraw* but no *Top up*; **admin@** sees *Shopping is for buyer accounts* on `/bag`. To show seller onboarding, sign up with **Open a boutique**, send the application, and approve it as **admin@** under **Control Room → Sellers**.
+6. As **admin@**: **Control Room → QueWallet → Run reconciliation** reports zero drift; **Integrations → Sent emails** shows the order emails (mock mode).
 
 To reset the store after rehearsing: `vm/stop.sh && cd backend && .venv/bin/python scripts/snapshot.py load --force && cd .. && vm/start.sh --prod`.
 

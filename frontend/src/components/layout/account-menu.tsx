@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, LogOut, ShieldCheck, ShoppingBag, Store, User, Wallet } from "lucide-react";
+import { Bell, LogOut, ShieldCheck, Store, User, Wallet } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -22,9 +22,9 @@ const iconLink =
   "grid size-11 place-items-center rounded-full text-ink transition-colors hover:bg-surface-muted";
 
 /**
- * Avatar menu. Sellers get the Shopping ↔ Seller Studio role switcher (one
- * account, roles as an array). UI layer 4 of RBAC: links appear only for roles
- * the user holds; the proxy and the API still enforce access.
+ * Avatar menu. Each account has one role (buyer, seller or admin), so it links
+ * to that role's area. UI layer 4 of RBAC: links appear only for the role the
+ * user holds; the proxy and the API still enforce access.
  */
 export function AccountMenu({ className }: { className?: string }) {
   const { user, status, hasRole } = useSession();
@@ -41,14 +41,14 @@ export function AccountMenu({ className }: { className?: string }) {
       <div className={cn("grid-flow-col items-center gap-1", className)}>
         <Link
           href={`/login?next=${encodeURIComponent(pathname)}`}
-          className="inline-flex h-10 items-center whitespace-nowrap rounded-pill bg-ink px-4 text-small font-semibold text-bg transition-colors hover:bg-ink/85 xl:bg-transparent xl:px-3 xl:text-ink xl:hover:bg-surface-muted"
+          className="inline-flex h-10 items-center whitespace-nowrap rounded-pill bg-ink px-4 text-small font-semibold text-bg transition-colors hover:bg-ink/85 2xl:bg-transparent 2xl:px-3 2xl:text-ink 2xl:hover:bg-surface-muted"
         >
           Sign in
         </Link>
         {/* Room for both only on wide screens; narrower, Sign in links on to sign-up. */}
         <Link
           href="/register"
-          className="hidden h-10 items-center whitespace-nowrap rounded-pill bg-ink px-4 text-small font-semibold text-bg transition-colors hover:bg-ink/85 xl:inline-flex"
+          className="hidden h-10 items-center whitespace-nowrap rounded-pill bg-ink px-4 text-small font-semibold text-bg transition-colors hover:bg-ink/85 2xl:inline-flex"
         >
           Join free
         </Link>
@@ -62,8 +62,6 @@ export function AccountMenu({ className }: { className?: string }) {
       </Link>
     );
   }
-
-  const inStudio = pathname.startsWith("/seller");
 
   return (
     <DropdownMenu>
@@ -80,28 +78,11 @@ export function AccountMenu({ className }: { className?: string }) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {hasRole("SELLER") && (
-          <>
-            <div role="group" aria-label="Switch mode" className="grid grid-cols-2 gap-1 rounded-pill bg-surface-muted p-1">
-              {[
-                { href: "/", label: "Shopping", icon: ShoppingBag, active: !inStudio },
-                { href: "/seller", label: "Seller Studio", icon: Store, active: inStudio },
-              ].map(({ href, label, icon: Icon, active }) => (
-                <DropdownMenuItem
-                  key={href}
-                  asChild
-                  className={cn(
-                    "min-h-10 justify-center rounded-pill px-2 text-caption font-semibold",
-                    active && "bg-surface shadow-1 data-[highlighted]:bg-surface",
-                  )}
-                >
-                  <Link href={href} aria-current={active ? "page" : undefined}>
-                    <Icon aria-hidden /> {label}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </div>
-            <DropdownMenuSeparator />
-          </>
+          <DropdownMenuItem asChild>
+            <Link href="/seller">
+              <Store aria-hidden /> Seller Studio
+            </Link>
+          </DropdownMenuItem>
         )}
         {!hasRole("ADMIN") && (
           <DropdownMenuItem asChild>

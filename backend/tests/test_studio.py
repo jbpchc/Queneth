@@ -13,6 +13,7 @@ from app.models import User
 from app.models.catalog import Drop, DropSubscription, Product, Review, SellerProfile, Variant
 from app.models.integration import EmailLog, MediaAsset, Notification
 from app.services import studio_service
+from tests.conftest import TEST_PASSWORD
 from tests.test_checkout import add, default_address, login, pay, user, variant_from
 
 S = "/api/v1/seller"
@@ -94,8 +95,25 @@ async def ready_product(client, db, *, publish: bool = True) -> dict:
 # ─── Application & approval ────────────────────────────────────────────────
 
 
+APPLICANT = "mira@queneth.test"
+
+
 async def test_apply_approve_and_reject(client, shop):
+    # Buyers can't open a boutique: selling needs a separate seller account.
     await login(client, "collector@queneth.test")
+    res = await client.put("/api/v1/seller-application", json=APPLICATION)
+    assert res.status_code == 403
+    client.cookies.clear()
+    res = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "name": "Mira Santos",
+            "email": APPLICANT,
+            "password": TEST_PASSWORD,
+            "account_type": "seller",
+        },
+    )
+    assert res.status_code == 201, res.text
     assert (await client.get("/api/v1/seller-application")).json() is None
     res = await client.put("/api/v1/seller-application", json={**APPLICATION, "bio": "Too short"})
     assert res.status_code == 422
@@ -122,22 +140,20 @@ async def test_apply_approve_and_reject(client, shop):
     assert rejected.json()["status"] == "rejected"
 
     # Resubmitting puts it back in the queue, then approval grants the SELLER role.
-    await login(client, "collector@queneth.test")
+    await login(client, APPLICANT)
     mine = (await client.get("/api/v1/seller-application")).json()
     assert mine["rejection_reason"] == "Add photos of your studio."
     again = (await client.put("/api/v1/seller-application", json=APPLICATION)).json()
     assert again["status"] == "pending" and again["rejection_reason"] is None
     await login(client, ADMIN)
     assert (await client.post(f"/api/v1/admin/sellers/{app_['id']}/approve")).status_code == 200
-    marco = await shop.scalar(
-        select(User)
-        .where(User.email == "collector@queneth.test")
-        .execution_options(populate_existing=True)
+    mira = await shop.scalar(
+        select(User).where(User.email == APPLICANT).execution_options(populate_existing=True)
     )
-    assert "SELLER" in marco.roles
+    assert mira.roles == ["SELLER"]
     templates = set((await shop.scalars(select(EmailLog.template))).all())
     assert {"seller_approved", "seller_rejected"} <= templates
-    await login(client, "collector@queneth.test")
+    await login(client, APPLICANT)
     dash = (await client.get(f"{S}/dashboard")).json()
     assert dash["boutique"] == "Atelier Mira" and dash["product_count"] == 0
     # An approved seller can't apply again.

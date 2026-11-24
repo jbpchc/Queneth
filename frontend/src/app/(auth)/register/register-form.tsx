@@ -1,9 +1,9 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, ShoppingBag, Store } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,14 @@ interface RegisterValues {
   password: string;
 }
 
+type AccountType = "buyer" | "seller";
+
+// One account, one role: a shopping account never sells and a boutique never shops.
+const ACCOUNT_TYPES: { value: AccountType; label: string; hint: string; icon: typeof Store }[] = [
+  { value: "buyer", label: "Shop", hint: "Buy from every boutique. QC 50,000 welcome credit.", icon: ShoppingBag },
+  { value: "seller", label: "Open a boutique", hint: "Sell your pieces after a quick review.", icon: Store },
+];
+
 const rules = [
   { label: "8+ characters", test: (v: string) => v.length >= 8 },
   { label: "A letter", test: (v: string) => /[A-Za-z]/.test(v) },
@@ -30,7 +38,9 @@ const rules = [
 
 export function RegisterForm() {
   const router = useRouter();
-  const next = useSearchParams().get("next");
+  const params = useSearchParams();
+  const next = params.get("next");
+  const [accountType, setAccountType] = useState<AccountType>(params.get("type") === "seller" ? "seller" : "buyer");
   const signUp = useRegister();
   const {
     register,
@@ -55,8 +65,9 @@ export function RegisterForm() {
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await signUp.mutateAsync(values);
-      router.replace(safeNext(next, "/account"));
+      await signUp.mutateAsync({ ...values, account_type: accountType });
+      // A new boutique starts with its application; shoppers go where they were headed.
+      router.replace(accountType === "seller" ? "/account/sell" : safeNext(next, "/account"));
       router.refresh();
     } catch {
       /* rendered below */
@@ -80,7 +91,32 @@ export function RegisterForm() {
           {apiError.message}
         </Alert>
       )}
-      <Field label="Full name" error={errors.name?.message}>
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-2 text-small font-semibold text-ink">I want to</legend>
+        <div role="radiogroup" aria-label="Account type" className="grid grid-cols-2 gap-3">
+          {ACCOUNT_TYPES.map(({ value, label, hint, icon: Icon }) => {
+            const on = accountType === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={on}
+                onClick={() => setAccountType(value)}
+                className={cn(
+                  "flex flex-col items-start gap-1.5 rounded-card border p-4 text-left transition-colors",
+                  on ? "border-accent bg-surface-muted ring-1 ring-accent" : "border-border-strong hover:border-ink",
+                )}
+              >
+                <Icon aria-hidden className={cn("size-5", on ? "text-accent" : "text-ink-muted")} />
+                <span className="text-small font-semibold text-ink">{label}</span>
+                <span className="text-caption text-ink-muted">{hint}</span>
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
+      <Field label={accountType === "seller" ? "Your name (the boutique's owner)" : "Full name"} error={errors.name?.message}>
         <Input
           autoComplete="name"
           autoFocus
@@ -126,7 +162,7 @@ export function RegisterForm() {
         })}
       </ul>
       <Button type="submit" variant="primary" size="lg" block loading={signUp.isPending}>
-        Create account
+        {accountType === "seller" ? "Create seller account" : "Create account"}
       </Button>
       <p className="text-center text-small text-ink-muted">
         Already have an account?{" "}

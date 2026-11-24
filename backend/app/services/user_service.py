@@ -59,8 +59,8 @@ async def _get_user(session: AsyncSession, user_id: uuid.UUID) -> User:
 async def set_roles(
     session: AsyncSession, actor: User, user_id: uuid.UUID, data: RoleUpdate, ip: str | None
 ) -> User:
-    """Replace a user's BUYER/SELLER roles. ADMIN is preserved untouched: it is
-    seeded only and can't be granted or removed through the API."""
+    """Set a user's account type (BUYER or SELLER, never both). ADMIN is preserved
+    untouched: it is seeded only and can't be granted or removed through the API."""
     assert_can(actor, Permission.USER_MANAGE_ROLES)
     target = await _get_user(session, user_id)
     before = sorted(target.roles)

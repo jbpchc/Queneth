@@ -21,7 +21,8 @@ export function proxy(request: NextRequest) {
 
   // Signed-in users don't need the sign-in pages.
   if (hint && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL(roles.includes("ADMIN") ? "/admin" : "/account", request.url));
+    const home = roles.includes("ADMIN") ? "/admin" : roles.includes("SELLER") ? "/seller" : "/account";
+    return NextResponse.redirect(new URL(home, request.url));
   }
 
   if (!PROTECTED_PREFIXES.some((p) => matches(pathname, p))) return NextResponse.next();

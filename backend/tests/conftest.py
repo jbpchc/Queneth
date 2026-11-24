@@ -35,6 +35,7 @@ from app.core.security import CSRF_COOKIE, CSRF_HEADER, hash_password  # noqa: E
 from app.db.session import get_session  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.models import Base, User  # noqa: E402
+from app.models.catalog import SellerProfile  # noqa: E402
 
 TEST_PASSWORD = "Queneth#2026"
 
@@ -162,12 +163,25 @@ async def accounts(db: AsyncSession) -> Accounts:
 
     users = Accounts(
         buyer=make("buyer@queneth.test", "Isabela Reyes", Role.BUYER),
-        seller=make("seller@queneth.test", "Atelier Lumen", Role.BUYER, Role.SELLER),
-        other_seller=make("seller2@queneth.test", "Maison Verde", Role.BUYER, Role.SELLER),
+        seller=make("seller@queneth.test", "Atelier Lumen", Role.SELLER),
+        other_seller=make("seller2@queneth.test", "Maison Verde", Role.SELLER),
         admin=make("admin@queneth.test", "Control Room", Role.ADMIN),
     )
     db.add_all([users.buyer, users.seller, users.other_seller, users.admin])
+    await db.flush()
+    # Seller accounts in these tests run approved boutiques (Studio tools need one).
+    for owner, name in ((users.seller, "Atelier Lumen"), (users.other_seller, "Maison Verde")):
+        db.add(
+            SellerProfile(
+                user_id=owner.id,
+                boutique_name=name,
+                slug=name.lower().replace(" ", "-"),
+                status="approved",
+            )
+        )
     await db.commit()
+    for u in (users.seller, users.other_seller):
+        await db.refresh(u, ["seller_profile"])
     return users
 
 

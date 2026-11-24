@@ -18,6 +18,7 @@ import { useSaveForLater, useVouchers } from "@/lib/commerce";
 import { formatQc, optionLabel } from "@/lib/format";
 import { useBag, useBagLine } from "@/lib/shop";
 import { useWallet } from "@/lib/wallet";
+import { NotAShopper } from "@/components/catalog/not-a-shopper";
 
 type BagItem = ApiSchemas["BagItem"];
 type BagGroup = ApiSchemas["BagGroup"];
@@ -27,7 +28,7 @@ type BagGroup = ApiSchemas["BagGroup"];
  * separately, so each has its own voucher slot and subtotal.
  */
 export function BagView() {
-  const { status } = useSession();
+  const { status, shopper, hasRole } = useSession();
   const bag = useBag();
   const wallet = useWallet();
 
@@ -50,6 +51,9 @@ export function BagView() {
         />
       </>
     );
+  }
+  if (status === "authenticated" && !shopper) {
+    return (<>{header}<NotAShopper admin={hasRole("ADMIN")} /></>);
   }
   if (status === "loading" || bag.isPending) {
     return (

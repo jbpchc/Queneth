@@ -4,6 +4,7 @@ import { Heart } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
+import { useSession } from "@/lib/auth/session";
 import { pop, spring } from "@/lib/motion";
 import { useToggleWishlist, useWishlistIds } from "@/lib/shop";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,10 @@ export function WishlistHeart({
   const toggle = useToggleWishlist();
   const reduce = useReducedMotion();
   const [burst, setBurst] = useState(0);
+  const { shopper } = useSession();
   const saved = ids?.has(productId) ?? false;
+
+  if (!shopper) return null; // seller and admin accounts don't keep wishlists
 
   return (
     <motion.button

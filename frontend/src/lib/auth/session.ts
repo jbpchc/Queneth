@@ -35,6 +35,8 @@ export function useSession() {
     status: !hydrated || query.isPending ? "loading" : user ? "authenticated" : "guest",
     hasRole: (role: Role) => !!user?.roles.includes(role),
     can: (permission: string) => !!user?.permissions.includes(permission),
+    /** Guests and buyer accounts shop; seller and admin accounts never do. */
+    shopper: !user || user.permissions.includes("cart:manage"),
     refetch: query.refetch,
   } as const;
 }
@@ -91,5 +93,17 @@ export function useUpdateProfile() {
 /** Where to land after sign-in when there's no ?next=. */
 export function homeFor(user: Me): string {
   if (user.roles.includes("ADMIN")) return "/admin";
+  if (user.roles.includes("SELLER")) return "/seller";
   return "/";
+}
+
+/**
+ * Where to go after signing in. Shoppers return to where they were; seller and
+ * admin accounts only follow `next` inside their own area (a seller sent to
+ * /bag by an old link lands in Seller Studio instead).
+ */
+export function landingFor(user: Me, next: string | null): string | null {
+  const home = homeFor(user);
+  if (user.roles.includes("BUYER")) return next;
+  return next && (next === home || next.startsWith(`${home}/`) || next.startsWith("/account")) ? next : home;
 }

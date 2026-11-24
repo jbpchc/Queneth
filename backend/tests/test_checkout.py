@@ -340,7 +340,7 @@ async def test_cannot_use_someone_elses_address(client, shop):
     assert res.status_code == 404 and res.json()["error"]["code"] == "address_not_found"
 
 
-async def test_seller_cannot_check_out_own_product(client, shop):
+async def test_seller_account_cannot_check_out(client, shop):
     seller = await user(shop, "nocturne@queneth.test")
     own = await variant_from(shop, "nocturne-parfums")
     shop.add(CartItem(user_id=seller.id, variant_id=own.id, qty=1))  # bypassing the bag guard
@@ -357,9 +357,9 @@ async def test_seller_cannot_check_out_own_product(client, shop):
             "zip": "1634",
         },
     )
-    assert address.status_code == 201, address.text
-    res = await pay(client, total=own.price_qc, address=address.json()["id"])
-    assert res.status_code == 409 and res.json()["error"]["code"] == "own_product"
+    assert address.status_code == 403  # seller accounts don't shop
+    res = await pay(client, total=own.price_qc, address=str(uuid.uuid4()))
+    assert res.status_code == 403
 
 
 async def test_saved_for_later_items_are_not_bought(client, shop):

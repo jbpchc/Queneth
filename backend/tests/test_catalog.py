@@ -271,7 +271,8 @@ async def test_boutiques_and_follow(client, catalog):
     assert off["follower_count"] == before["follower_count"]
 
     await _login(client, "obra@queneth.test")
-    assert (await client.put(f"{P}/boutiques/obra-leather/follow")).status_code == 409
+    # Seller accounts don't shop, so they can't follow boutiques either.
+    assert (await client.put(f"{P}/boutiques/obra-leather/follow")).status_code == 403
 
 
 async def test_collections(client, catalog):
@@ -357,12 +358,13 @@ async def test_bag_flow(client, catalog):
     assert bag["item_count"] == 0 and bag["groups"] == []
 
 
-async def test_seller_cannot_bag_own_product(client, catalog, db):
-    page = await _first_in_stock(client, boutique="obra-leather")
-    variant = next(v for v in page["variants"] if v["stock"] > 0)
-    await _login(client, "obra@queneth.test")
-    res = await client.post("/api/v1/cart/items", json={"variant_id": variant["id"]})
-    assert res.status_code == 409 and res.json()["error"]["code"] == "own_product"
+async def test_seller_account_cannot_use_the_bag(client, catalog, db):
+    for boutique in ("obra-leather", "nocturne-parfums"):  # their own piece, and another's
+        page = await _first_in_stock(client, boutique=boutique)
+        variant = next(v for v in page["variants"] if v["stock"] > 0)
+        await _login(client, "obra@queneth.test")
+        res = await client.post("/api/v1/cart/items", json={"variant_id": variant["id"]})
+        assert res.status_code == 403
 
 
 # ─── Generated art ─────────────────────────────────────────────────────────

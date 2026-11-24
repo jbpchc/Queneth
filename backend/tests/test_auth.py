@@ -44,6 +44,28 @@ async def test_register_creates_buyer_and_signs_in(client, db):
     assert stored is not None and stored.password_hash.startswith("$argon2")
 
 
+async def test_register_seller_account(client, db):
+    res = await client.post(
+        REGISTER,
+        json={
+            "name": "Mira Santos",
+            "email": "mira@example.com",
+            "password": "atelier2026",
+            "account_type": "seller",
+        },
+    )
+    assert res.status_code == 201, res.text
+    user = res.json()["user"]
+    assert user["roles"] == ["SELLER"]
+    # A new seller can apply and upload, but can't shop or use the Studio yet.
+    assert {"seller:apply", "media:upload", "wallet:view"} <= set(user["permissions"])
+    assert "cart:manage" not in user["permissions"]
+    assert "product:create" not in user["permissions"]
+    assert client.cookies.get(SESSION_HINT_COOKIE) == "SELLER"
+    wallet = (await client.get("/api/v1/wallet")).json()
+    assert wallet["balance_qc"] == 0  # the welcome credit is for shoppers
+
+
 async def test_register_rejects_duplicate_email(client, accounts):
     res = await client.post(
         REGISTER, json={"name": "Copy Cat", "email": "BUYER@queneth.test", "password": "abc12345"}
@@ -97,9 +119,10 @@ async def test_login_and_me(client, accounts):
     me = await client.get(ME)
     assert me.status_code == 200
     body = me.json()
-    assert body["roles"] == ["BUYER", "SELLER"]
+    assert body["roles"] == ["SELLER"]
     assert "product:create" in body["permissions"]
-    assert client.cookies.get(SESSION_HINT_COOKIE) == "BUYER.SELLER"
+    assert "cart:manage" not in body["permissions"]
+    assert client.cookies.get(SESSION_HINT_COOKIE) == "SELLER"
 
 
 async def test_update_profile(client, accounts, login):

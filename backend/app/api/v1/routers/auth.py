@@ -59,7 +59,9 @@ async def register(
 ) -> AuthResponse:
     user, tokens = await auth_service.register(session, body, settings, _client(request))
     # 50,000 QC welcome grant through the ledger (spec §8), idempotent per user.
-    await wallet_service.grant_welcome(session, user)
+    # Shoppers only: a seller's wallet holds what its boutique earns.
+    if body.account_type == "buyer":
+        await wallet_service.grant_welcome(session, user)
     # Queue the confirmation email (and its inbox copy); deliver after the response.
     entry = await account_service.send_verification(session, user, settings)
     await session.commit()

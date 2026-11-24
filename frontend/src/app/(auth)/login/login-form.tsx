@@ -11,7 +11,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Alert } from "@/components/ui/states";
 import { toApiError } from "@/lib/api/client";
 import { safeNext } from "@/lib/auth/redirect";
-import { homeFor, useLogin } from "@/lib/auth/session";
+import { homeFor, landingFor, useLogin } from "@/lib/auth/session";
 
 interface LoginValues {
   email: string;
@@ -32,7 +32,7 @@ export function LoginForm() {
   const onSubmit = handleSubmit(async (values) => {
     try {
       const user = await login.mutateAsync(values);
-      router.replace(safeNext(next, homeFor(user)));
+      router.replace(safeNext(landingFor(user, next), homeFor(user)));
       router.refresh();
     } catch {
       /* rendered from login.error below */

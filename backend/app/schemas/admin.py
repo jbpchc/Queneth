@@ -11,15 +11,19 @@ Reason = Field(min_length=5, max_length=500, examples=["Approved boutique onboar
 
 
 class RoleUpdate(ApiModel):
-    """BUYER and SELLER only. ADMIN is seeded, never granted through the API."""
+    """The account's one type: BUYER or SELLER (an account is never both).
+    ADMIN is seeded, never granted through the API."""
 
     roles: list[Literal["BUYER", "SELLER"]] = Field(min_length=1)
     reason: str = Reason
 
     @field_validator("roles")
     @classmethod
-    def _dedupe(cls, v: list[str]) -> list[str]:
-        return sorted(set(v))
+    def _one_type(cls, v: list[str]) -> list[str]:
+        roles = sorted(set(v))
+        if len(roles) != 1:
+            raise ValueError("Choose one account type: buyer or seller.")
+        return roles
 
 
 class StatusUpdate(ApiModel):

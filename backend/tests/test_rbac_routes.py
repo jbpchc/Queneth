@@ -13,7 +13,7 @@ ADMIN_ROUTES = [
     (
         "patch",
         "/api/v1/admin/users/{id}/roles",
-        {"roles": ["BUYER", "SELLER"], "reason": "Approved boutique"},
+        {"roles": ["SELLER"], "reason": "Approved boutique"},
     ),
     (
         "patch",
@@ -83,23 +83,35 @@ async def test_admin_changes_roles_with_audit(client, accounts, login, db):
     await login("admin@queneth.test")
     res = await client.patch(
         f"/api/v1/admin/users/{accounts.buyer.id}/roles",
-        json={"roles": ["SELLER", "BUYER", "SELLER"], "reason": "Approved boutique onboarding"},
+        json={"roles": ["SELLER", "SELLER"], "reason": "Approved boutique onboarding"},
     )
     assert res.status_code == 200, res.text
-    assert res.json()["roles"] == ["BUYER", "SELLER"]
+    assert res.json()["roles"] == ["SELLER"]
 
     entry = await db.scalar(select(AuditLog).where(AuditLog.action == "user.roles_changed"))
     assert entry is not None
     assert entry.actor_id == accounts.admin.id
     assert entry.target_id == str(accounts.buyer.id)
     assert entry.before == {"roles": ["BUYER"]}
-    assert entry.after == {"roles": ["BUYER", "SELLER"]}
+    assert entry.after == {"roles": ["SELLER"]}
     assert entry.reason == "Approved boutique onboarding"
 
     # The change is effective immediately on the user's next request.
     await login("buyer@queneth.test")
     me = (await client.get("/api/v1/me")).json()
-    assert "product:create" in me["permissions"]
+    assert me["roles"] == ["SELLER"]
+    # Now a seller account: it can apply for a boutique, and no longer shops.
+    assert "seller:apply" in me["permissions"]
+    assert "cart:manage" not in me["permissions"]
+
+
+async def test_account_is_never_buyer_and_seller(client, accounts, login):
+    await login("admin@queneth.test")
+    res = await client.patch(
+        f"/api/v1/admin/users/{accounts.buyer.id}/roles",
+        json={"roles": ["BUYER", "SELLER"], "reason": "Both at once"},
+    )
+    assert res.status_code == 422
 
 
 async def test_admin_role_cannot_be_granted_via_api(client, accounts, login):
@@ -159,7 +171,7 @@ async def test_admin_cannot_ban_self_or_other_admins(client, accounts, login):
 
 async def test_audit_log_pagination(client, accounts, login):
     await login("admin@queneth.test")
-    for roles in (["BUYER", "SELLER"], ["BUYER"], ["BUYER", "SELLER"]):
+    for roles in (["SELLER"], ["BUYER"], ["SELLER"]):
         await client.patch(
             f"/api/v1/admin/users/{accounts.buyer.id}/roles",
             json={"roles": roles, "reason": "Toggling for the audit test"},

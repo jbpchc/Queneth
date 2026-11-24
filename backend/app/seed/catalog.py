@@ -114,8 +114,8 @@ async def _user(session: AsyncSession, email: str, name: str, roles: list[Role])
         )
         session.add(user)
         await session.flush()
-    elif Role.SELLER in roles and not user.has_role(Role.SELLER):
-        user.roles = sorted({*user.roles, Role.SELLER.value})
+    elif Role.SELLER in roles and user.roles != [Role.SELLER.value]:
+        user.roles = [Role.SELLER.value]  # one role per account: sellers don't shop
     return user
 
 
@@ -126,7 +126,7 @@ async def seed_boutiques(
     profiles: dict[str, SellerProfile] = {}
     brands: dict[str, Brand] = {b.slug: b for b in (await session.scalars(select(Brand))).all()}
     for b in BOUTIQUES:
-        owner = await _user(session, b.owner_email, b.owner_name, [Role.BUYER, Role.SELLER])
+        owner = await _user(session, b.owner_email, b.owner_name, [Role.SELLER])
         profile = await session.scalar(select(SellerProfile).where(SellerProfile.slug == b.slug))
         if profile is None:
             profile = SellerProfile(

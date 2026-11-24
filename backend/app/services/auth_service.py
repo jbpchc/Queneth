@@ -42,7 +42,7 @@ class ClientInfo:
 async def register(
     session: AsyncSession, data: RegisterRequest, settings: Settings, client: ClientInfo
 ) -> tuple[User, IssuedTokens]:
-    """Create a BUYER account and sign it in. ADMIN can never be self-registered."""
+    """Create a BUYER or SELLER account and sign it in. ADMIN can never be self-registered."""
     existing = await session.scalar(select(User.id).where(User.email == data.email))
     if existing:
         raise Conflict(
@@ -54,9 +54,10 @@ async def register(
         name=data.name,
         email=data.email,
         password_hash=hash_password(data.password),
-        roles=[Role.BUYER.value],
+        roles=[Role.SELLER.value if data.account_type == "seller" else Role.BUYER.value],
         status=UserStatus.ACTIVE.value,
         last_login_at=utcnow(),
+        seller_profile=None,  # new accounts have no boutique; avoids a lazy load later
     )
     session.add(user)
     try:
@@ -64,7 +65,6 @@ async def register(
     except IntegrityError as exc:  # lost a race with an identical sign-up
         await session.rollback()
         raise Conflict("An account with this email already exists.", code="email_taken") from exc
-    # Phase 5 adds the 50,000 QC welcome grant here, inside this same transaction.
     tokens = await _issue(session, user, settings, client, family_id=None)
     await session.commit()
     log.info("user_registered", user_id=str(user.id))

@@ -19,13 +19,14 @@ import { useSession } from "@/lib/auth/session";
 import { useBoardMutations, type Board } from "@/lib/commerce";
 import { formatQc } from "@/lib/format";
 import { useWishlistIds } from "@/lib/shop";
+import { NotAShopper } from "@/components/catalog/not-a-shopper";
 
 /**
  * Saved pieces with honest price-drop and availability indicators, filed on
  * named boards. UX: Chunking — boards split a long wishlist into small sets.
  */
 export function WishlistView() {
-  const { status, can } = useSession();
+  const { status, can, shopper, hasRole } = useSession();
   const ids = useWishlistIds();
   const { move } = useBoardMutations();
   const [board, setBoard] = useState<string | null>(null);
@@ -58,6 +59,9 @@ export function WishlistView() {
         />
       </>
     );
+  }
+  if (status === "authenticated" && !shopper) {
+    return (<>{header}<NotAShopper admin={hasRole("ADMIN")} /></>);
   }
   if (status === "loading" || list.isPending) {
     return (

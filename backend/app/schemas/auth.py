@@ -38,6 +38,9 @@ class RegisterRequest(ApiModel):
     name: PersonName = Field(examples=["Isabela Reyes"])
     email: Email = Field(examples=["isabela@queneth.test"])
     password: NewPassword = Field(examples=["Queneth#2026"])
+    #: Fixed for the life of the account: a buyer shops, a seller runs one boutique
+    #: (after applying and being approved). Admin accounts are never self-registered.
+    account_type: Literal["buyer", "seller"] = "buyer"
 
 
 class LoginRequest(ApiModel):

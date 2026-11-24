@@ -13,7 +13,8 @@ from app.services import address_service
 
 router = APIRouter(prefix="/addresses", tags=["addresses"])
 
-Owner = Depends(require_permission(Permission.PROFILE_MANAGE))
+# Delivery addresses are for shopping: buyer accounts only.
+Owner = Depends(require_permission(Permission.ORDER_CHECKOUT))
 
 
 def out(a: Address) -> AddressOut:

@@ -18,7 +18,7 @@ import { PinDialog, RedeemForm, TopUpDialog, WithdrawDialog } from "./wallet-act
 import { WalletHistory } from "./wallet-history";
 
 export function WalletView() {
-  const { status, hasRole } = useSession();
+  const { status, hasRole, can } = useSession();
   const wallet = useWallet();
   const [dialog, setDialog] = useState<"topup" | "pin" | "withdraw" | null>(null);
   // Animate up from 0 on first view, then roll between values (odometer).
@@ -59,6 +59,7 @@ export function WalletView() {
 
   const w = wallet.data;
   const seller = hasRole("SELLER");
+  const canTopUp = can("wallet:topup");
   return (
     <div className="flex flex-col gap-10">
       {header}
@@ -99,9 +100,11 @@ export function WalletView() {
             )}
           </div>
           <div className="flex flex-wrap gap-3">
-            <Button size="lg" onClick={() => setDialog("topup")} className="bg-on-accent-2 text-accent-2 hover:bg-on-accent-2/90">
-              <Plus aria-hidden /> Top up
-            </Button>
+            {canTopUp && (
+              <Button size="lg" onClick={() => setDialog("topup")} className="bg-on-accent-2 text-accent-2 hover:bg-on-accent-2/90">
+                <Plus aria-hidden /> Top up
+              </Button>
+            )}
             <Button size="lg" variant="outline" onClick={() => setDialog("pin")} className="border-on-accent-2/40 text-on-accent-2 hover:bg-white/10">
               <KeyRound aria-hidden /> {w.has_pin ? "Change PIN" : "Set PIN"}
             </Button>
@@ -114,9 +117,12 @@ export function WalletView() {
         </div>
       </Card>
 
-      <Card className="p-6">
-        <RedeemForm />
-      </Card>
+      {/* Top-ups and codes are shopping money; a seller's wallet holds what it earns. */}
+      {canTopUp && (
+        <Card className="p-6">
+          <RedeemForm />
+        </Card>
+      )}
 
       <WalletHistory />
 
@@ -124,7 +130,7 @@ export function WalletView() {
         QueWallet credits are simulated for academic purposes and have no cash value. 1 QC is shown as a notional PHP 1.
       </p>
 
-      <TopUpDialog wallet={w} open={dialog === "topup"} onOpenChange={(o) => setDialog(o ? "topup" : null)} />
+      {canTopUp && <TopUpDialog wallet={w} open={dialog === "topup"} onOpenChange={(o) => setDialog(o ? "topup" : null)} />}
       <PinDialog hasPin={w.has_pin} open={dialog === "pin"} onOpenChange={(o) => setDialog(o ? "pin" : null)} />
       {seller && <WithdrawDialog wallet={w} open={dialog === "withdraw"} onOpenChange={(o) => setDialog(o ? "withdraw" : null)} />}
     </div>

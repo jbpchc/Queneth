@@ -82,15 +82,19 @@ _BUYER: dict[Permission, Scope] = {
     P.ORDER_CHECKOUT: OWN,
     P.ORDER_VIEW: OWN,
     P.REVIEW_WRITE: OWN,  # verified purchasers only; enforced in review_service
-    P.SELLER_APPLY: OWN,
     P.PROFILE_MANAGE: OWN,
     P.WALLET_VIEW: OWN,
     P.WALLET_TOPUP: OWN,
 }
 
-# Sellers keep every buyer ability (except applying again) and add studio tools.
+# Sellers run a boutique and nothing else: they don't shop (no wishlist, bag,
+# checkout or top-ups). A seller account applies once; Studio tools work once
+# an admin approves the boutique (ownership comes from an approved profile).
+# Their QueWallet holds sales released from escrow, for viewing and withdrawal.
 _SELLER: dict[Permission, Scope] = {
-    **{perm: scope for perm, scope in _BUYER.items() if perm is not P.SELLER_APPLY},
+    P.SELLER_APPLY: OWN,
+    P.PROFILE_MANAGE: OWN,
+    P.WALLET_VIEW: OWN,
     P.PRODUCT_CREATE: OWN,
     P.PRODUCT_UPDATE: OWN,
     P.PRODUCT_ARCHIVE: OWN,
@@ -130,17 +134,30 @@ _ADMIN: dict[Permission, Scope] = {
     P.INTEGRATIONS_MANAGE: ANY,
 }
 
+#: Seller Studio tools work only for an approved boutique. A seller account whose
+#: application is pending, rejected or suspended keeps just the rest of _SELLER
+#: (apply, profile, uploads for the application, and its wallet).
+NEEDS_APPROVED_BOUTIQUE: frozenset[Permission] = frozenset({
+    P.PRODUCT_CREATE,
+    P.PRODUCT_UPDATE,
+    P.PRODUCT_ARCHIVE,
+    P.INVENTORY_MANAGE,
+    P.ORDER_FULFILL,
+    P.REVIEW_REPLY,
+    P.DROP_MANAGE,
+    P.VOUCHER_MANAGE,
+    P.EARNINGS_VIEW,
+})  # fmt: skip
+
 ROLE_PERMISSIONS: dict[Role, dict[Permission, Scope]] = {
     Role.BUYER: _BUYER,
     Role.SELLER: _SELLER,
     Role.ADMIN: _ADMIN,
 }
 
-# Holding a role can also take a permission away: sellers also hold BUYER, but
-# "apply to become a seller" is n/a for them (spec §7 matrix).
-ROLE_EXCLUSIONS: dict[Role, frozenset[Permission]] = {
-    Role.SELLER: frozenset({P.SELLER_APPLY}),
-}
+#: Every account has exactly one role: buyer, seller or admin (chosen at sign-up;
+#: admins are seeded). Kept as a hook for roles that remove a permission.
+ROLE_EXCLUSIONS: dict[Role, frozenset[Permission]] = {}
 
 
 def _excluded(roles: list[Role]) -> frozenset[Permission]:
@@ -156,6 +173,15 @@ class Principal(Protocol):
     def seller_id(self) -> Any: ...
 
 
+def _role_applies(user: Principal, role: Role, permission: Permission) -> bool:
+    """The SELLER role grants Studio tools only once the boutique is approved."""
+    return not (
+        role is Role.SELLER
+        and permission in NEEDS_APPROVED_BOUTIQUE
+        and getattr(user, "seller_id", None) is None
+    )
+
+
 def _roles_of(user: Principal) -> list[Role]:
     return [Role(r) for r in (user.roles or []) if r in Role.__members__]
 
@@ -168,7 +194,9 @@ def scope_for(user: Principal | None, permission: Permission) -> Scope | None:
     if permission in _excluded(roles):
         return None
     scopes = {
-        ROLE_PERMISSIONS[role][permission] for role in roles if permission in ROLE_PERMISSIONS[role]
+        ROLE_PERMISSIONS[role][permission]
+        for role in roles
+        if permission in ROLE_PERMISSIONS[role] and _role_applies(user, role, permission)
     }
     if Scope.ANY in scopes:
         return Scope.ANY
@@ -179,7 +207,10 @@ def permissions_for(user: Principal | None) -> set[Permission]:
     if user is None or user.status != "active":
         return set()
     roles = _roles_of(user)
-    return {perm for role in roles for perm in ROLE_PERMISSIONS[role]} - _excluded(roles)
+    granted = {
+        perm for role in roles for perm in ROLE_PERMISSIONS[role] if _role_applies(user, role, perm)
+    }
+    return granted - _excluded(roles)
 
 
 def is_owner(user: Principal, resource: Any) -> bool:

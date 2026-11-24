@@ -12,7 +12,11 @@ export function safeNext(next: string | null | undefined, fallback = "/"): strin
 
 /** Route rules shared by the Next.js proxy and client guards (UX only). */
 export const PROTECTED_PREFIXES = ["/account", "/checkout", "/seller", "/admin"] as const;
-export const ROLE_PREFIXES: Record<string, "SELLER" | "ADMIN"> = {
+export const ROLE_PREFIXES: Record<string, "BUYER" | "SELLER" | "ADMIN"> = {
   "/seller": "SELLER",
   "/admin": "ADMIN",
+  // Shopping areas: buyer accounts only (sellers and admins never shop).
+  "/checkout": "BUYER",
+  "/account/orders": "BUYER",
+  "/account/addresses": "BUYER",
 };

@@ -129,7 +129,7 @@ function UserPanel({ id }: { id: string }) {
   const d = u.data;
   const isAdmin = d.roles.includes("ADMIN");
   const self = me?.id === d.id;
-  const draft = roles ?? (d.roles.filter((r) => r !== "ADMIN") as ("BUYER" | "SELLER")[]);
+  const draft = roles ?? (d.roles.filter((r) => r !== "ADMIN").slice(0, 1) as ("BUYER" | "SELLER")[]);
 
   return (
     <div className="flex flex-col gap-5 pt-6">
@@ -165,7 +165,7 @@ function UserPanel({ id }: { id: string }) {
       </p>
 
       {isAdmin || self ? (
-        <p className="text-small text-ink-muted">{self ? "This is you." : "Admins are managed outside the app"}, so roles and bans can&apos;t be changed here.</p>
+        <p className="text-small text-ink-muted">{self ? "This is you." : "Admins are managed outside the app"}, so account type and bans can&apos;t be changed here.</p>
       ) : panel === "ban" ? (
         <ReasonForm label="Why ban this person? Their sessions end immediately." confirmLabel="Ban" danger
           onSubmit={(reason) => setStatus.mutateAsync({ id: d.id, status: "banned", reason }).then(() => { toast.success(`${d.name} banned`); setPanel(null); u.refetch(); })}
@@ -176,24 +176,28 @@ function UserPanel({ id }: { id: string }) {
           onCancel={() => setPanel(null)} />
       ) : panel === "roles" ? (
         <div className="flex flex-col gap-3">
+          {/* One account, one type: a buyer never sells and a seller never shops. */}
           <fieldset className="flex gap-2">
-            <legend className="mb-2 text-small font-semibold text-ink">Roles</legend>
+            <legend className="mb-2 text-small font-semibold text-ink">Account type</legend>
             {(["BUYER", "SELLER"] as const).map((r) => (
-              <button key={r} type="button" aria-pressed={draft.includes(r)} onClick={() => setRolesDraft(draft.includes(r) ? draft.filter((x) => x !== r) : [...draft, r])}
+              <button key={r} type="button" role="radio" aria-checked={draft[0] === r} aria-pressed={draft[0] === r} onClick={() => setRolesDraft([r])}
                 className="h-11 rounded-pill border border-border-strong px-4 text-small font-semibold aria-pressed:border-ink aria-pressed:bg-ink aria-pressed:text-bg">
-                {r.toLowerCase()}
+                {r === "BUYER" ? "Buyer" : "Seller"}
               </button>
             ))}
           </fieldset>
-          {draft.length === 0 ? <p className="text-small text-danger">Keep at least one role.</p> : (
-            <ReasonForm label="Why change roles?" confirmLabel="Save roles"
-              onSubmit={(reason) => setRoles.mutateAsync({ id: d.id, roles: draft, reason }).then(() => { toast.success("Roles updated"); setPanel(null); setRolesDraft(null); u.refetch(); })}
-              onCancel={() => { setPanel(null); setRolesDraft(null); }} />
-          )}
+          <p className="text-caption text-ink-muted">
+            {draft[0] === "SELLER"
+              ? "A seller account can't shop. It applies for a boutique, and Seller Studio opens once you approve it."
+              : "A buyer account shops. It can't sell or use Seller Studio."}
+          </p>
+          <ReasonForm label="Why change the account type?" confirmLabel="Save account type"
+            onSubmit={(reason) => setRoles.mutateAsync({ id: d.id, roles: draft, reason }).then(() => { toast.success("Account type updated"); setPanel(null); setRolesDraft(null); u.refetch(); })}
+            onCancel={() => { setPanel(null); setRolesDraft(null); }} />
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setPanel("roles")}>Edit roles…</Button>
+          <Button variant="outline" size="sm" onClick={() => setPanel("roles")}>Change account type…</Button>
           {d.status === "banned"
             ? <Button variant="primary" size="sm" onClick={() => setPanel("unban")}>Unban…</Button>
             : <Button variant="danger" size="sm" onClick={() => setPanel("ban")}>Ban…</Button>}

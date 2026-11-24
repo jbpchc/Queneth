@@ -74,7 +74,7 @@ export function AccountOverview() {
                 {roleLabel[r]}
               </Badge>
             ))}
-            {!hasRole("ADMIN") && (
+            {hasRole("BUYER") && (
               <Badge tone="lilac" withIcon={false}>
                 {tierLabel[user.tier] ?? user.tier}
               </Badge>
@@ -109,7 +109,7 @@ export function AccountOverview() {
             </Button>
           </CardContent>
         </Card>
-        {!hasRole("ADMIN") && (
+        {hasRole("BUYER") && (
           <Card>
             <CardHeader>
               <CardTitle>Orders &amp; delivery</CardTitle>
@@ -129,26 +129,13 @@ export function AccountOverview() {
             </CardContent>
           </Card>
         )}
-        {!hasRole("SELLER") && !hasRole("ADMIN") && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Sell on Queneth</CardTitle>
-              <CardDescription>Open a boutique for your own label. Every application is reviewed by hand.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild variant="outline" block>
-                <Link href="/account/sell">
-                  <Store aria-hidden /> Apply or check your application
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
         {hasRole("SELLER") && (
           <Card>
             <CardHeader>
               <CardTitle>Seller Studio</CardTitle>
-              <CardDescription>Your boutique&apos;s products, orders and earnings.</CardDescription>
+              <CardDescription>
+                Your boutique&apos;s products, orders and earnings. A new boutique opens here once it&apos;s approved.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Button asChild variant="secondary" block>

@@ -258,7 +258,13 @@ async def test_redeem_code_rules(client, db, funded):
     ] == "code_expired"
     assert (await client.post(f"{W}/redeem", json={"code": "NOPE-0000"})).status_code == 404
 
+    # Seller accounts don't top up: their wallet only holds what they earn.
     await login(client, "seller@queneth.test")
+    assert (await client.post(f"{W}/redeem", json={"code": "QUE-DEMO-5000"})).status_code == 403
+
+    client.cookies.clear()
+    second = {"name": "Ana Cruz", "email": "ana@queneth.test", "password": "Queneth#2026"}
+    assert (await client.post("/api/v1/auth/register", json=second)).status_code == 201
     exhausted = await client.post(f"{W}/redeem", json={"code": "QUE-DEMO-5000"})
     assert exhausted.json()["error"]["code"] == "code_exhausted"
     await assert_reconciled(db)

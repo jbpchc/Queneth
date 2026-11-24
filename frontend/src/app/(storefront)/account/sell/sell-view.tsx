@@ -22,7 +22,7 @@ import { useApplication, useApply, type Application } from "@/lib/studio";
  * UX: Cognitive Load — helper text says exactly what reviewers look for.
  */
 export function SellView() {
-  const { status, hasRole } = useSession();
+  const { status, can } = useSession();
   const app = useApplication();
   const [editing, setEditing] = useState(false);
 
@@ -47,8 +47,10 @@ export function SellView() {
         </p>
       </header>
 
-      {a?.status === "approved" || hasRole("SELLER") ? (
+      {a?.status === "approved" ? (
         <Approved />
+      ) : !can("seller:apply") ? (
+        <SellerAccountNeeded />
       ) : a?.status === "pending" && !editing ? (
         <Pending app={a} onEdit={() => setEditing(true)} />
       ) : (
@@ -62,6 +64,20 @@ export function SellView() {
         </>
       )}
     </div>
+  );
+}
+
+/** Buyer accounts shop; a boutique needs its own seller account. */
+function SellerAccountNeeded() {
+  return (
+    <Card className="flex flex-col items-start gap-4 p-6">
+      <Store aria-hidden className="size-8 text-accent" />
+      <h2 className="text-h3 text-ink">Boutiques have their own accounts</h2>
+      <p className="max-w-xl text-body text-ink-muted">
+        This is a shopping account. To sell on Queneth, sign out and create a seller account: choose{" "}
+        <strong className="text-ink">Open a boutique</strong> when you sign up, then send this application.
+      </p>
+    </Card>
   );
 }
 

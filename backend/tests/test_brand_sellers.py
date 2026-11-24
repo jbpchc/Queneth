@@ -3,6 +3,7 @@ re-running adds nothing."""
 
 from sqlalchemy import func, select
 
+from app.models import User
 from app.models.catalog import Product, SellerProfile
 from app.seed.base import seed_base
 from app.seed.brand_sellers import ITEMS, seed_brand_sellers
@@ -11,8 +12,12 @@ from app.seed.brand_sellers import ITEMS, seed_brand_sellers
 async def test_brand_sellers_seed(client, db):
     await seed_base(db)
     first = await seed_brand_sellers(db)
-    assert first == {"sellers": 3, "products": sum(len(v) for v in ITEMS.values())}
-    assert await seed_brand_sellers(db) == {"sellers": 0, "products": 0}
+    assert first == {"sellers": 3, "products": sum(len(v) for v in ITEMS.values()), "buyers": 2}
+    assert await seed_brand_sellers(db) == {"sellers": 0, "products": 0, "buyers": 0}
+    # Stores are seller-only accounts; the demo shoppers are buyer-only.
+    roles = dict((await db.execute(select(User.email, User.roles))).all())
+    assert roles["nike@queneth.test"] == ["SELLER"]
+    assert roles["buyer@queneth.test"] == roles["collector@queneth.test"] == ["BUYER"]
 
     rows = (
         await db.execute(

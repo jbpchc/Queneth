@@ -4645,6 +4645,12 @@ export interface components {
              * @example Queneth#2026
              */
             password: string;
+            /**
+             * Account Type
+             * @default buyer
+             * @enum {string}
+             */
+            account_type?: "buyer" | "seller";
         };
         /** ReleaseResult */
         ReleaseResult: {
@@ -4783,7 +4789,8 @@ export interface components {
         };
         /**
          * RoleUpdate
-         * @description BUYER and SELLER only. ADMIN is seeded, never granted through the API.
+         * @description The account's one type: BUYER or SELLER (an account is never both).
+         *     ADMIN is seeded, never granted through the API.
          */
         RoleUpdate: {
             /** Roles */
