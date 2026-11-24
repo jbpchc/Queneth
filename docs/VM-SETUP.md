@@ -89,6 +89,7 @@ From `~/Queneth`:
 | `vm/start.sh --prod` | **For the demo.** Checks the setup, starts the API, builds and starts the production storefront, warms the main pages. About 2 minutes. |
 | `vm/start.sh` | Development mode (hot reload, Next.js dev overlay). Starts in about 20 s. |
 | `vm/status.sh` | Health of both services, VM resources, and a log check. |
+| `vm/reset.sh` | Clean demo store (0 orders), then starts in production mode. |
 | `vm/stop.sh` | Stops both services. |
 
 The servers run in the background in their own session, so **closing the
@@ -136,7 +137,7 @@ Password for all: `Queneth#2026`. QueWallet PIN: `123456`. Buyers start with QC 
 5. Show the separation: **bench@** has no bag or wishlist, and its wallet has *Withdraw* but no *Top up*; **admin@** sees *Shopping is for buyer accounts* on `/bag`. To show seller onboarding, sign up with **Open a boutique**, send the application, and approve it as **admin@** under **Control Room → Sellers**.
 6. As **admin@**: **Control Room → QueWallet → Run reconciliation** reports zero drift; **Integrations → Sent emails** shows the order emails (mock mode).
 
-To reset the store after rehearsing: `vm/stop.sh && cd backend && .venv/bin/python scripts/snapshot.py load --force && cd .. && vm/start.sh --prod`.
+To reset the store after rehearsing: `vm/reset.sh`. Everyday commands and a presentation checklist are in [RUNNING-QUENETH.md](RUNNING-QUENETH.md).
 
 ## 9. Optional: open the site from the host's browser
 

@@ -47,8 +47,11 @@ Set up once with **[docs/VM-SETUP.md](docs/VM-SETUP.md)**, then:
 ```bash
 vm/start.sh --prod   # API + storefront in the background; survives closing the terminal
 vm/status.sh         # health, VM resources, log check
+vm/reset.sh          # clean demo store (0 orders), then start for presenting
 vm/stop.sh
 ```
+
+Day-to-day commands, the presentation checklist, speed tips and fixes: **[docs/RUNNING-QUENETH.md](docs/RUNNING-QUENETH.md)**.
 
 ### Without Docker (SQLite)
 
