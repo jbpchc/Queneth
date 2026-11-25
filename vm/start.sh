@@ -23,6 +23,10 @@ MODE=dev
 ok() { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 fail() { printf '  \033[31m✗\033[0m %s\n' "$*" >&2; exit 1; }
 up() { curl -fsS --max-time 3 -o /dev/null "$1" 2>/dev/null; }
+# The API answers AND can read its database (a server started from a folder
+# that was since moved or renamed answers, but every catalog call fails).
+api_healthy() { curl -fsS --max-time 5 "$API_URL" 2>/dev/null | grep -q '"database":"ok"' \
+  && curl -fsS --max-time 10 -o /dev/null "${API_URL%/health}/catalog/boutiques" 2>/dev/null; }
 port_busy() { ss -ltn "sport = :$1" 2>/dev/null | grep -q LISTEN; }
 
 # Run a server in its own session (no controlling terminal, so closing the
@@ -57,7 +61,11 @@ command -v node >/dev/null || fail "Node.js missing: see docs/VM-SETUP.md, step 
 ok "Python $("$ROOT/backend/.venv/bin/python" -c 'import platform; print(platform.python_version())'), Node $(node -v), store database present"
 
 # --- API -------------------------------------------------------------------
-if up "$API_URL"; then
+if up "$API_URL" && ! api_healthy; then
+  echo "The API on port 8000 can't read the store database (was the Queneth folder moved?). Restarting it…"
+  "$ROOT/vm/stop.sh" >/dev/null 2>&1 || true
+fi
+if api_healthy; then
   ok "API already running on port 8000"
 else
   port_busy 8000 && fail "Port 8000 is taken by another program: run vm/stop.sh, or: ss -ltnp 'sport = :8000'"
@@ -74,6 +82,8 @@ else
   port_busy 3000 && fail "Port 3000 is taken by another program: run vm/stop.sh, or: ss -ltnp 'sport = :3000'"
   export NEXT_TELEMETRY_DISABLED=1
   if [[ $MODE == prod ]]; then
+    # The build pre-renders catalog pages from the API, so it must be serving.
+    api_healthy || fail "The API isn't serving the catalog, so the build would fail. See logs/api.log, then run vm/stop.sh and vm/start.sh --prod"
     echo "Building the storefront for production (about 1–2 minutes)…"
     (cd "$ROOT/frontend" && npx next build) >"$LOGS/build.log" 2>&1 \
       || { tail -n 30 "$LOGS/build.log" >&2; fail "Build failed (full log: $LOGS/build.log)"; }
