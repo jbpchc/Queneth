@@ -1,274 +1,246 @@
-# Screen-recording workflow — Platform Technologies + IPT
+# Screen-recording script — Platform Technologies + IPT
 
-One recording that covers **both** rubrics. Each scene says what to show, the
-exact commands or clicks, what to say, and which rubric rows it earns.
+Follows the class **SCREEN RECORDING GUIDE** step by step (Steps 1–9), with the
+exact Queneth commands, clicks and lines to say. Everything below was rehearsed
+in the VM. Target length: **20–25 minutes**.
 
-| Code | Rubric row | Points |
-| --- | --- | --- |
-| **PT1** | PlatTech · Error-Free Platform Execution on VM | 35 |
-| **PT2** | PlatTech · Localhost & VM Network Configuration | 25 |
-| **PT3** | PlatTech · VM Provisioning & Environment Setup | 20 |
-| **PT4** | PlatTech · Service & Database Reliability | 10 |
-| **PT5** | PlatTech · VM Verification & Setup Documentation | 10 |
-| **IPT1** | IPT · Core E-Commerce Functionality | 25 |
-| **IPT2** | IPT · API Integration & Design (min. 2 APIs) | 25 |
-| **IPT3** | IPT · Python Back-End & Database Architecture | 20 |
-| **IPT4** | IPT · Virtual Machine & Localhost Environment | 15 |
-| **IPT5** | IPT · Front-End UI/UX & Documentation | 15 |
-
-**Target length: 18–22 minutes.** Record in one take if you can; if you cut,
-cut between scenes, never in the middle of a command (graders look for
-"no manual intervention").
+Accounts — password `Queneth#2026`, QueWallet PIN `123456`:
+`buyer@queneth.test` (buyer) · `bench@queneth.test` (seller) · `admin@queneth.test` (admin).
 
 ---
 
-## Before you press record (10 minutes)
+## 0. Ten minutes before recording
 
-1. **VirtualBox (VM off):** 4 CPUs, 8192 MB RAM (or what you have), 128 MB video memory.
-2. **Laptop:** plugged in, other apps closed, notifications off (Do Not Disturb).
-3. **Record from the host, not inside the VM.** It keeps the VM fast.
-   - Windows host: **OBS Studio** (best) or **Xbox Game Bar** (`Win + Alt + R`).
-   - Capture the VirtualBox window in full screen (`Right Ctrl + F`), 1080p, 30 fps, with your microphone.
-4. **Inside the VM**, open a terminal and run:
+1. Laptop plugged in, notifications off, heavy apps closed. Record the
+   **VirtualBox window from the host** (OBS or `Win + Alt + R`) so the VM stays fast.
+2. In the VM, one terminal:
 
    ```bash
    cd ~/Queneth
-   vm/tune.sh            # once per VM (asks for your password)
-   vm/reset.sh           # clean store: 0 orders, 31 products — ends running
-   vm/stop.sh            # stop it again so you can start it ON CAMERA
+   grep -q '^PSGC_MODE=live' backend/.env || echo 'PSGC_MODE=live' >> backend/.env   # live address API (once)
+   vm/reset.sh        # clean store: 0 orders, 31 products (also starts Queneth)
+   vm/stop.sh         # stop again, so you start it on camera in Step 2
    clear
    ```
 
-5. Open in the VM: **Firefox** (zoom 110%, one empty tab), **one terminal**
-   (font size ~14, window half screen), **VS Code** on `~/Queneth`, and the
-   **Files** app — nothing else. Close the Claude desktop app.
-6. Have this page open on your phone or a second screen as your script.
-
-Accounts (password `Queneth#2026`, PIN `123456`): `buyer@queneth.test`,
-`bench@queneth.test`, `admin@queneth.test`.
+3. Open and arrange: **Firefox** (one empty tab), the **terminal** (font ~14),
+   **VS Code** on `~/Queneth`. Close the Claude app and anything else.
+4. In Firefox, open `about:config` once and set `ui.prefersReducedMotion` to `0`
+   (Firefox in a VM turns animations down otherwise).
+5. Pick a new email for Step 6, e.g. `demo1@queneth.test` (each email can register once).
 
 ---
 
-## Scene 1 · Intro (0:00 – 0:45)
+# Part 1 · Platform Technologies
 
-**Show:** the Queneth home page screenshot or the README in VS Code.
+## Step 1 · VM Provisioning & Environment Setup (20 pts)
 
-**Say:** names, project title, one sentence: *"Queneth is a multi-vendor fashion
-marketplace with separate buyer, seller and admin accounts, an escrow wallet
-(QueWallet), and three external integrations. Everything runs inside this
-Ubuntu VM."* Name the stack: FastAPI (Python), SQLAlchemy + SQLite, Next.js.
-
----
-
-## Scene 2 · The VM and its environment (0:45 – 3:00) → PT3, IPT4
-
-1. Briefly show **VirtualBox → Settings → System** (CPUs, RAM) and **Storage** (disk). Close it.
-2. In the VM terminal:
+1. **VirtualBox Manager** → select the VM → **Settings → System** (Base Memory,
+   Processors) → **Storage** (virtual disk size). Close the dialog.
+   *"4 vCPUs, 8 GB RAM and a 25 GB virtual disk for the Ubuntu guest."*
+2. Switch to the running VM window: *"Everything from here runs inside Ubuntu, not Windows."*
+3. In the VM terminal:
 
    ```bash
+   cd ~/Queneth
    lsb_release -d; nproc; free -h; df -h ~
+   ls -la backend | grep -E "\.env|\.venv"
+   cat backend/.env.example | head -32
+   source backend/.venv/bin/activate
+   python --version
+   pip list
+   pip check
    ```
 
-   *"Ubuntu 26.04 guest with 4 vCPUs and 8 GB RAM, running everything — nothing on the host."*
+   *"Configuration lives in `.env` files — I'm showing the template because the
+   real one contains the JWT secret. Python packages are isolated in a virtual
+   environment; `pip check` confirms no missing or broken modules."*
+   (Leave the venv active, or run `deactivate`.)
 
-3. Isolated dependencies:
+## Step 2 · Localhost & VM Network Configuration (25 pts)
+
+1. **VirtualBox → Settings → Network**: show *Adapter 1*.
+   - Our VM uses a **Bridged Adapter**, so it has its own address on the LAN and
+     needs no port-forwarding rules; the demo runs in the VM's own browser on
+     `localhost`. Say exactly that.
+   - (If your VM uses *NAT* instead, show **Advanced → Port Forwarding** with
+     Host 3000 → Guest 3000 and Host 8000 → Guest 8000.)
+2. In the terminal:
 
    ```bash
-   ls backend/.venv/bin | head -5
-   backend/.venv/bin/python --version
-   backend/.venv/bin/python -m pip list 2>/dev/null | grep -iE "fastapi|sqlalchemy|uvicorn|pwdlib|httpx"
-   node -v; ls frontend/node_modules | wc -l
-   cat backend/.env.example | head -20
+   hostname -I
+   ip -brief a
    ```
 
-   *"Python packages live in an isolated virtual environment, Node in the user
-   folder; configuration comes from `.env` files (the real one holds secrets, so I'm showing the template)."*
+   *"The VM's internal IP; the app is served on localhost inside the VM."*
+3. **Start the services**:
 
-> Never `cat backend/.env` on camera: it contains the JWT secret.
+   ```bash
+   vm/start.sh --prod
+   ```
 
----
+   *"One command: checks the environment, starts FastAPI on 0.0.0.0:8000, builds
+   and starts the Next.js storefront on 0.0.0.0:3000, both in the background."*
+4. Prove the ports are listening with no conflicts:
 
-## Scene 3 · Start the services, live (3:00 – 5:00) → PT4, PT2, IPT4
+   ```bash
+   ss -tulnp | grep -E ':3000|:8000'
+   ```
 
-```bash
-vm/start.sh --prod
-```
-
-While it runs, explain: *"One command checks the VM, starts the FastAPI API on
-port 8000, builds and starts the production storefront on port 3000, and runs
-them in the background so closing the terminal doesn't stop them."*
-
-Then prove ports and health:
+## Step 3 · Service & Database Reliability (10 pts)
 
 ```bash
 vm/status.sh
-ss -ltnp '( sport = :3000 or sport = :8000 )'
-curl -s localhost:8000/api/v1/health; echo
+curl -i http://localhost:8000/api/health
+curl -si http://localhost:8000/docs | head -1
 ```
 
-*"API and storefront are up, the database answers, both logs are clean — no
-port conflicts. Front end on localhost:3000, API on localhost:8000."*
+*"API, storefront and the SQLite database are up; the health check answers
+`200 OK` with `database: ok`, and the API docs page is served."*
 
----
-
-## Scene 4 · Documentation (5:00 – 6:00) → PT5, IPT5
-
-In VS Code or the Files app, scroll quickly through:
-
-- `README.md` → *"setup, account types, commands"*
-- `docs/VM-SETUP.md` → *"step-by-step VM provisioning and startup, verification checklist, troubleshooting"*
-- `docs/RUNNING-QUENETH.md` → *"day-to-day commands and fixes"*
-- `docs/INTEGRATIONS.md` → *"each external API, its endpoints, timeouts and fallbacks"*
-- `backend/pyproject.toml` → *"pinned Python dependencies"* (and `backend/requirements.txt` if you add one)
-
-Then in Firefox open **http://localhost:8000/docs** → *"Interactive API
-documentation, generated from the code: 160+ REST endpoints grouped by area."*
-Scroll the groups (auth, catalog, cart, orders, wallet, seller, admin).
-
----
-
-## Scene 5 · Shopping as a guest (6:00 – 7:30) → IPT1, IPT5, PT1
-
-At **http://localhost:3000**:
-
-1. Home page → **Clothing** → use a **color** or **size** filter → sort by price.
-2. Search box: type `nike` (show suggestions) → open a product.
-3. Product page: pick a color (the photo switches) and a size; point at the
-   stock line (*"In stock · ships in 2–4 days"* / *"Only 3 left"*). The sold-out
-   case is shown live in Scene 8.
-4. Click **Add to Bag** while signed out → *"guests are asked to sign in; the bag belongs to an account."*
-5. Open **/bag** as a guest → empty-bag state.
-
----
-
-## Scene 6 · Accounts and authentication (7:30 – 9:00) → IPT1, IPT3
-
-1. **Register** → try a weak password and a bad email → show the error messages →
-   cancel. *"Inputs are validated on the server, not just in the browser."*
-2. **Sign in** as `buyer@queneth.test`.
-3. Back in the terminal, show passwords are hashed:
-
-   ```bash
-   backend/.venv/bin/python -c "import sqlite3; c=sqlite3.connect('backend/demo.db'); print(c.execute(\"select email, substr(password_hash,1,32) from users where email='buyer@queneth.test'\").fetchone())"
-   ```
-
-   *"Only an Argon2id hash is stored, never the password. Sessions use short-lived
-   JWT cookies with refresh-token rotation and CSRF protection."*
-
----
-
-## Scene 7 · Bag, edge cases and checkout (9:00 – 12:00) → IPT1, IPT2, PT1
-
-1. Bench **Pique Polo** → size **M** → **Add to Bag**.
-2. Open another product → **Buy now** → *"Buy now pays for just this piece; the bag keeps the rest."*
-   Click "Check out the whole bag instead" to return to the full bag.
-3. In the **Bag**: raise the quantity above the stock → *"Only N left"*; use
-   **Save for later**; type a wrong voucher code → friendly error.
-4. **Checkout with QueWallet → Add a new address**: choose **Region →
-   Province → City → Barangay**. *"This list comes from the PSGC API — the
-   Philippine government's official geographic codes — our first external API."*
-5. Review → enter a **wrong PIN** (`111111`) → error, no charge → enter
-   `123456` → **Pay**. Confirmation page: *"Paid, held in escrow."*
-6. **Account → Orders** → the order and its status timeline (order history).
-
----
-
-## Scene 8 · Seller and order lifecycle (12:00 – 14:00) → IPT1, PT1
-
-1. Sign out → sign in as `bench@queneth.test` → **Seller Studio**.
-2. **Orders** → the new order → *Start preparing* → *Ship* with tracking
-   `LBC-12345678` → *Mark delivered*.
-3. **Stock** → set the *Pique Polo · Purple · XS* stock to **0** → save.
-   Open http://localhost:3000/p/bench-pique-polo: **XS is crossed out** and
-   can't be chosen. *"Inventory changes reach the shop instantly; out-of-stock
-   options can't be bought."* (Set it back afterwards, or `vm/reset.sh` later.)
-4. Quick look at **My products** (draft/live) and **Earnings**.
-5. Sign back in as `buyer@` → the order → **I received it** → leave a review.
-   *"Escrow is released to the seller minus 5% commission; the buyer earns Que Points."*
-6. Point out: sellers have **no bag or wishlist** — the three account types are separate.
-
----
-
-## Scene 9 · The APIs up close (14:00 – 16:30) → IPT2 (25 pts — don't rush this)
-
-At **http://localhost:8000/docs** ("Try it out"):
-
-1. `GET /api/v1/catalog/products` → **200** with clean JSON (items, pagination).
-2. `GET /api/v1/catalog/products/{slug}` with `does-not-exist` → **404** with an error body.
-3. `GET /api/v1/cart` → **401** *"protected endpoints need a signed-in session."*
-4. `GET /api/v1/geo/regions` → the PSGC data through our API (cached, with offline fallback).
-
-Then in the app, sign in as `admin@queneth.test` → **Control Room → Integrations**:
-
-- Three cards: **PSGC** (addresses), **Brevo** (transactional email), **Cloudinary**
-  (images): calls, failures, fallbacks, latency.
-- *"Every external call has a 5-second timeout and retries; if a provider is
-  down, Queneth falls back (bundled PSGC copy, local image storage, email
-  queued) so shoppers never see an outage."*
-- **Sent emails** → open the order-confirmation email preview → *"Brevo runs in
-  mock mode for the demo, so emails are recorded instead of sent."*
-
-Summarise: *"Our own RESTful API with proper methods and status codes, plus three
-external APIs — PSGC, Brevo and Cloudinary — exceeding the two-API minimum."*
-
----
-
-## Scene 10 · Back-end architecture and database (16:30 – 18:30) → IPT3, PT4
-
-1. VS Code, `backend/app/` — open each folder for 2–3 seconds:
-   - `api/v1/routers/` → *"HTTP layer: routes only"*
-   - `services/` → *"business logic"*
-   - `models/` → *"SQLAlchemy database models with foreign keys and constraints"*
-   - `schemas/` → *"Pydantic validation of every request and response"*
-   - `alembic/versions/` → *"versioned database migrations"*
-2. Open `app/core/permissions.py` → *"role-based permissions: buyer, seller, admin."*
-3. Control Room → **QueWallet → Run reconciliation** → **zero drift**:
-   *"double-entry ledger; every balance matches its transactions."*
-4. **Audit log** → admin actions recorded.
-
----
-
-## Scene 11 · Clean logs and wrap-up (18:30 – 20:00) → PT5, PT1, PT4
+## Step 4 · VM Verification, Logs & Setup Documentation (10 pts)
 
 ```bash
-vm/status.sh
+tail -n 30 logs/api.log
 grep -ciE "traceback|error" logs/api.log logs/web.log
 ```
 
-*"After the whole walkthrough: services still up, zero tracebacks or errors in
-the logs."* Optionally run the automated tests (takes ~2 min — fine to speed up in editing):
+*"Startup log is clean — zero tracebacks or errors."*
 
-```bash
-cd backend && .venv/bin/python -m pytest -q
-```
+Then open **`README.md`** in VS Code (Ctrl+Shift+V for the preview) and scroll
+through **Architecture** and **VM Setup & Startup Instructions**. Mention the
+full guide **`docs/VM-SETUP.md`** and **`docs/RUNNING-QUENETH.md`**.
 
-Close with: what you built, the two rubric highlights (runs fully inside the VM;
-own API + three external APIs), and thanks.
+## Step 5 · Error-Free Platform Execution on VM (35 pts)
+
+1. In Firefox (inside the VM) open **http://localhost:3000**.
+2. Press **F12** → dock DevTools at the bottom → keep the **Console** tab visible;
+   switch to **Network** now and then during Part 2.
+   *"No errors in the console and every request returns 2xx — this stays open
+   for the whole walkthrough."*
 
 ---
 
-## Checklist — every rubric row covered
+# Part 2 · Integrative Programming Technologies
 
-| Row | Shown in scenes |
+Keep the terminal visible at the side (or Alt+Tab to it) so it's clear the
+requests hit the VM.
+
+## Step 6 · Core E-Commerce Functionality (25 pts)
+
+1. **Authentication**
+   - **Sign up** → first try a bad email and a short password → the form shows
+     clear errors → then register `demo1@queneth.test` / `Queneth#2026`, name *Demo Buyer*.
+   - Press **F5**: still signed in (*"JWT in secure cookies, refreshed automatically"*).
+2. **Catalog & search**
+   - **Clothing** → **More filters** → **Boutique: Bench** (and a size or color)
+     → **Show N pieces** → sort by price. *"Filter by vendor, size, color and price."*
+   - Search bar: type `jordan` → suggestions → open **Air Jordan 5 'Black Carolina'**.
+3. **Bag updates & edge cases**
+   - Pick **Black · size 11** (only **3** in stock) → **Add to Bag** → toast.
+   - Open the **Bag** (it already warns *"Only 3 left"*) → press **+** to 2, then 3:
+     the subtotal updates live (QC 5,495 → 10,990 → 16,485).
+   - **Edge case 1 — stock limit:** at 3 the **+** button is disabled, so the bag
+     can't exceed the stock. Go back to the product and press **Add to Bag**
+     again → error toast *"Only 3 left in this option."*
+   - **Edge case 2 — empty bag:** remove the item (trash icon) → *"Your bag is
+     empty"* with only *Browse new arrivals*; there is no checkout. Re-add the
+     shoe (size 11) from its page for the checkout.
+4. **Checkout & order history**
+   - **Checkout with QueWallet** → new address: **Region → Province → City →
+     Barangay** (from the live PSGC API — see Step 7) → **Save**.
+   - **Review** → **Pay**: first-time buyers **choose a 6-digit PIN** (`123456`) →
+     **Save PIN** → enter it → type a wrong PIN once to show the error → correct
+     PIN → **Pay** → *Order confirmed, held in escrow*.
+   - **Account → Orders** → press **F5**: the order is still there (persisted).
+   - Stock went down — in the terminal:
+
+     ```bash
+     curl -s localhost:8000/api/v1/catalog/products/nike-air-jordan-5-black-carolina | python3 -c "import json,sys; [print(v['options'], 'stock', v['stock']) for v in json.load(sys.stdin)['variants'] if v['options'].get('size')=='11']"
+     ```
+
+     (It was 3; now 3 minus what you bought.)
+
+## Step 7 · API Integration Design — Minimum 2 APIs (25 pts)
+
+**API 1 — Queneth's own REST API (FastAPI).** Open **http://localhost:8000/docs**.
+You're signed in (same cookies), so *Try it out* works:
+
+| Request | Shows |
 | --- | --- |
-| PT1 Error-free execution | 5, 7, 8, 11 (no errors across all workflows) |
-| PT2 Localhost & ports | 3 (`ss`, health check, ports 3000/8000) |
-| PT3 VM provisioning | 2 (resources, venv, Node, `.env.example`) |
-| PT4 Service & DB reliability | 3, 10, 11 (one-command start, health, reconciliation) |
-| PT5 VM docs & clean logs | 4, 11 |
-| IPT1 Core e-commerce + edge cases | 5, 6, 7, 8 (empty bag, over-stock, wrong PIN, sold-out size) |
-| IPT2 ≥ 2 APIs, status codes, failures | 7, 9 |
-| IPT3 Python back-end, schema, hashing, validation | 6, 10 |
-| IPT4 VM & localhost | 2, 3 |
-| IPT5 UI/UX + README, requirements, API docs | 4, 5–8 |
+| `GET /api/v1/catalog/products` → Try it out → Execute | **200** + clean JSON (items, pagination) |
+| `POST /api/v1/cart/items` with `{"variant_id": "dc276849-8467-45ac-98e5-e5b93faaecfc", "qty": 1}` | **201 Created**, the updated bag (Pique Polo, Purple · XS) |
+| `GET /api/v1/catalog/products/{slug}` with `does-not-exist` | **404** `{"error": {"code": "product_not_found", …}}` |
+| `POST /api/v1/cart/items` with `{"variant_id": "abc"}` | **422** validation error JSON (no crash) |
 
-## If something goes wrong while recording
+*"Proper methods and status codes; every error is a JSON envelope."*
 
-Don't panic on camera — this is also graded ("handles errors gracefully").
+**API 2 — PSGC, the Philippine government's geographic code API (external, live).**
+
+1. In the storefront: **Account → Addresses → Add an address** → pick a Region and
+   Province. In DevTools **Network**, click a `geo/...` request: **200**, JSON with
+   `"source": "live"` (or `"cache"` for repeats).
+2. In the terminal, the back end's own log of the outbound call:
+
+   ```bash
+   grep -E "psgc.gitlab.io" logs/api.log | tail -3
+   ```
+
+   *"Our API calls psgc.gitlab.io with a 5-second timeout and retries, caches the
+   answer, and falls back to a bundled copy if the service is down."*
+
+**Also integrated (mock mode for the demo):** sign in as `admin@` →
+**Control Room → Integrations**: PSGC (live), **Brevo** (transactional email) and
+**Cloudinary** (images) with call/failure/fallback counters → **Sent emails** →
+open the order-confirmation email preview.
+
+## Step 8 · Python Back-End & Database Architecture (20 pts)
+
+1. **Structure** — VS Code, expand `backend/app/`:
+   `api/v1/routers/` (HTTP routes) · `services/` (business logic) · `models/`
+   (SQLAlchemy) · `schemas/` (Pydantic validation) · `db/session.py` (database
+   connection) · `core/` (security, permissions) · `alembic/versions/` (migrations).
+2. **Validation & hashing**
+   - `backend/app/schemas/auth.py` → `EmailStr`, password rules.
+   - `backend/app/schemas/studio.py` → `VariantIn`: `price_qc: int = Field(gt=0)`, `stock: int = Field(ge=0)`.
+   - `backend/app/core/security.py` → line ~21 `Argon2Hasher` (Argon2id hashing).
+3. **Schema & persistent data**
+   - `backend/app/models/user.py` (users), `catalog.py` (products, variants),
+     `commerce.py` (orders → sub_orders → order_items, `ForeignKey(...)`).
+   - Terminal:
+
+     ```bash
+     sqlite3 -header -column backend/demo.db "SELECT email, substr(password_hash,1,40) AS password_hash FROM users;"
+     sqlite3 -header -column backend/demo.db "SELECT number, status, total_qc, created_at FROM orders ORDER BY created_at DESC LIMIT 5;"
+     ```
+
+     *"Only Argon2id hashes are stored, and the order we just placed is in the database."*
+
+## Step 9 · Front-End UI/UX & Documentation (15 pts)
+
+1. **Responsive:** DevTools → **Toggle device toolbar** (Ctrl+Shift+M) → iPhone →
+   home page and a product page (sticky *Add to Bag / Buy now* bar, bottom tabs).
+   Back to desktop.
+2. **Feedback:** point at the toasts (*Added to your bag*), button spinners, form
+   errors and the empty states you showed.
+3. **Documentation** — VS Code, repository root:
+   - `README.md` → Architecture, VM Setup & Startup Instructions, **API endpoints**
+   - `requirements.txt` → pinned Python dependencies
+   - `docs/` → `VM-SETUP.md`, `RUNNING-QUENETH.md`, `INTEGRATIONS.md`
+   - live API list: http://localhost:8000/docs
+
+**Close:** `vm/status.sh` once more (*"still up, logs clean"*), then thank the panel.
+
+---
+
+## If something goes wrong on camera
 
 | Problem | Do this |
 | --- | --- |
-| Page slow on first load | Wait; say "first load after a fresh build". |
-| `vm/start.sh` says a port is taken | `vm/stop.sh`, then `vm/start.sh --prod`. |
-| Sign-in says "too many attempts" | Wait one minute (login rate limit — mention it's a security feature). |
-| Anything else | Stop recording, `vm/reset.sh`, restart from the last scene. |
+| A page is slow the first time | Wait; *"first load after a fresh build"*. |
+| "Port … is taken" | `vm/stop.sh` then `vm/start.sh --prod`. |
+| "Too many attempts" at sign-in | Login is limited to 10 per minute — wait 60 s (a security feature). |
+| "This email is already registered" | Use the next email (`demo2@…`). |
+| Anything else | Stop, `vm/reset.sh`, redo from the last step. |
+
+After recording, `vm/reset.sh` puts the store back to 0 orders.

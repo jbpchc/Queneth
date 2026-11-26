@@ -14,10 +14,87 @@ accessories and perfumes, built as an academic capstone. The backend is
 | Layer | Tech |
 | --- | --- |
 | API | Python 3.12+, FastAPI, SQLAlchemy 2 (async), Alembic, Pydantic v2 |
-| Database | PostgreSQL 16 (`pg_trgm`, `citext`) |
+| Database | SQLite in the VM demo (`backend/demo.db`); PostgreSQL 16 with Docker |
 | Frontend | Next.js 16 (App Router), TypeScript, Tailwind CSS v4, Radix, Motion, TanStack Query |
 | API types | `openapi-typescript` + `openapi-fetch`, generated from FastAPI's schema |
 | Local run | Docker Compose: `db`, `api`, `frontend` |
+
+## Architecture
+
+```
+ Browser (VM)                Ubuntu VM
+ ───────────    ┌──────────────────────────────────────────────────────┐
+  localhost:3000│ Next.js storefront ──REST/JSON──▶ FastAPI  :8000      │
+                │  (pages, UI)                      ├─ routers/   HTTP   │
+                │                                   ├─ services/  logic  │
+                │                                   ├─ schemas/   Pydantic validation
+                │                                   ├─ models/    SQLAlchemy ORM
+                │                                   └─ integrations/ ─┐  │
+                │                     SQLite demo.db ◀┘               │  │
+                └─────────────────────────────────────────────────────┼──┘
+                                   PSGC (addresses) · Brevo (email) · Cloudinary (images)
+```
+
+- **Accounts:** buyer, seller and admin are separate account types with their own
+  permissions (`backend/app/core/permissions.py`).
+- **Security:** Argon2id password hashing, JWT access/refresh cookies with rotation,
+  CSRF double-submit tokens, rate-limited sign-in, server-side validation of every request.
+- **Money:** QueWallet is a double-entry ledger; payments sit in escrow until the
+  buyer confirms delivery.
+
+## VM Setup & Startup Instructions
+
+Everything runs inside the Ubuntu VM. Full details and troubleshooting:
+**[docs/VM-SETUP.md](docs/VM-SETUP.md)**; day-to-day commands and the presentation
+checklist: **[docs/RUNNING-QUENETH.md](docs/RUNNING-QUENETH.md)**.
+
+1. **Allocate resources** (VirtualBox, VM off): 4 vCPU, 8 GB RAM, 25 GB disk.
+2. **System packages:** `sudo apt install -y git curl python3-venv python3-pip sqlite3`
+3. **Code and Python environment** (isolated in `backend/.venv`):
+
+   ```bash
+   git clone https://github.com/jbpchc/Queneth.git ~/Queneth && cd ~/Queneth
+   python3 -m venv backend/.venv
+   backend/.venv/bin/python -m pip install -r requirements.txt
+   cp backend/.env.example backend/.env      # then set JWT_SECRET (see VM-SETUP.md)
+   cp frontend/.env.example frontend/.env
+   (cd backend && .venv/bin/python scripts/snapshot.py load)   # demo store + photos
+   ```
+
+4. **Node.js 22** in `~/.local/node` (no root; see VM-SETUP.md step 4), then
+   `cd frontend && npm install`.
+5. **Start, check, stop** (from `~/Queneth`):
+
+   ```bash
+   vm/start.sh --prod   # API on 0.0.0.0:8000 + production storefront on 0.0.0.0:3000, in the background
+   vm/status.sh         # health, VM resources, log check
+   vm/reset.sh          # clean demo store (0 orders), then start for presenting
+   vm/tune.sh           # once per VM: lighter Ubuntu (animations, indexer, unused services off)
+   vm/stop.sh
+   ```
+
+6. **Verify:** `curl -i http://localhost:8000/api/health` returns `200 OK`;
+   open http://localhost:3000 in the VM's browser.
+
+## API endpoints
+
+The live, interactive list of all endpoints is at **http://localhost:8000/docs**
+(OpenAPI; ReDoc at `/redoc`). Main groups, all under `/api/v1`:
+
+| Group | Examples |
+| --- | --- |
+| Auth | `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh`, `POST /auth/logout`, `GET /me` |
+| Catalog | `GET /catalog/products?q=&category=&sort=`, `GET /catalog/products/{slug}`, `GET /catalog/boutiques` |
+| Bag | `GET /cart`, `POST /cart/items`, `PATCH /cart/items/{id}`, `DELETE /cart/items/{id}`, `POST /cart/vouchers` |
+| Orders | `POST /orders/checkout`, `GET /orders`, `GET /orders/{id}`, `POST /orders/sub-orders/{id}/received` |
+| Addresses | `GET/POST/PUT/DELETE /addresses` · PSGC lists: `GET /geo/regions`, `/geo/regions/{code}/cities` |
+| Wallet | `GET /wallet`, `POST /wallet/topups`, `POST /wallet/withdrawals`, `GET /wallet/transactions` |
+| Seller Studio | `GET/POST /seller/products`, `PATCH /seller/products/{id}`, `POST /seller/orders/{id}/status` |
+| Admin | `GET /admin/overview`, `PATCH /admin/users/{id}/status`, `POST /admin/sellers/{id}/approve`, `GET /admin/wallet/reconcile` |
+
+External APIs and their fallbacks: **[docs/INTEGRATIONS.md](docs/INTEGRATIONS.md)**.
+Errors always come back as JSON: `{"error": {"code", "message", "details"}}` with
+the matching status (400/401/403/404/409/422/429).
 
 ## Quick start (Docker)
 
@@ -39,20 +116,6 @@ Migrations run automatically when the `api` container starts. To run one by hand
 ```bash
 docker compose exec api alembic upgrade head
 ```
-
-### In the Ubuntu VM (one command)
-
-Set up once with **[docs/VM-SETUP.md](docs/VM-SETUP.md)**, then:
-
-```bash
-vm/start.sh --prod   # API + storefront in the background; survives closing the terminal
-vm/status.sh         # health, VM resources, log check
-vm/reset.sh          # clean demo store (0 orders), then start for presenting
-vm/tune.sh           # once per VM: lighter Ubuntu (animations, indexer, unused services off)
-vm/stop.sh
-```
-
-Day-to-day commands, the presentation checklist, speed tips and fixes: **[docs/RUNNING-QUENETH.md](docs/RUNNING-QUENETH.md)**.
 
 ### Without Docker (SQLite)
 

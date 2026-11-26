@@ -16,6 +16,8 @@ os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
 os.environ.setdefault("SCHEDULER_ENABLED", "false")
 os.environ.setdefault("INTEGRATIONS_MODE", "mock")
+# Tests run every integration mocked, whatever a developer's .env says.
+os.environ["PSGC_MODE"] = ""
 
 import pytest  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402

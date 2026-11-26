@@ -46,7 +46,7 @@ def _configured(name: IntegrationName, settings: Settings) -> bool:
 
 
 def _health(state: IntegrationState, settings: Settings, configured: bool) -> str:
-    if settings.integrations_mode == "mock":
+    if settings.mode_for(state.name.value) == "mock":
         return "mock"
     if not configured:
         return "unconfigured"
@@ -99,7 +99,7 @@ async def statuses(session: AsyncSession, settings: Settings) -> list[Integratio
                 name=state.name.value,  # type: ignore[arg-type]
                 label=label,
                 purpose=purpose,
-                mode=settings.integrations_mode,
+                mode=settings.mode_for(state.name.value),
                 configured=configured,
                 health=_health(state, settings, configured),  # type: ignore[arg-type]
                 calls=state.calls,
@@ -120,9 +120,9 @@ async def statuses(session: AsyncSession, settings: Settings) -> list[Integratio
 async def probe(name: IntegrationName, settings: Settings) -> None:
     """Make one real call so the admin can see whether the API answers now.
     In mock mode nothing leaves the server."""
-    if settings.integrations_mode == "mock":
+    if settings.mode_for(name.value) == "mock":
         raise Conflict(
-            "Integrations are in mock mode; switch INTEGRATIONS_MODE=live to probe.",
+            "This integration is in mock mode; switch INTEGRATIONS_MODE=live to probe.",
             code="mock_mode",
         )
     adapter = {

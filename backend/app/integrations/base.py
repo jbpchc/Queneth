@@ -117,7 +117,7 @@ class HttpAdapter:
 
     @property
     def mock(self) -> bool:
-        return self.settings.integrations_mode == "mock"
+        return self.settings.mode_for(self.name.value) == "mock"
 
     def client(self, **kwargs: Any) -> httpx.AsyncClient:
         return httpx.AsyncClient(

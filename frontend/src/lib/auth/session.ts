@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSyncExternalStore } from "react";
 
-import { api, type ApiSchemas } from "@/lib/api/client";
+import { api, readCookie, SESSION_HINT_COOKIE, type ApiSchemas } from "@/lib/api/client";
 
 export type Me = ApiSchemas["MeOut"];
 export type Role = Me["roles"][number];
@@ -18,8 +18,16 @@ export function useSession() {
   const query = useQuery({
     queryKey: ME_KEY,
     queryFn: async (): Promise<Me | null> => {
+      // No session hint cookie (set at sign-in, same lifetime as the refresh
+      // token): this visitor is a guest. Skip the request instead of logging
+      // a 401 in the console on every page.
+      if (!readCookie(SESSION_HINT_COOKIE)) return null;
       const { data, error, response } = await api.GET("/api/v1/me");
-      if (response.status === 401 || response.status === 403) return null;
+      if (response.status === 401 || response.status === 403) {
+        // The server no longer knows this session: drop the stale hint.
+        document.cookie = `${SESSION_HINT_COOKIE}=; Max-Age=0; path=/`;
+        return null;
+      }
       if (error) throw error;
       return data ?? null;
     },

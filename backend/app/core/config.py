@@ -54,6 +54,10 @@ class Settings(BaseSettings):
 
     # External integrations
     integrations_mode: Literal["live", "mock"] = "mock"
+    #: Per-API override of `integrations_mode` for PSGC (no API key needed), so
+    #: the address lists can come from the real service while email and image
+    #: hosting stay mocked. Empty: follow `integrations_mode`.
+    psgc_mode: Literal["live", "mock"] | None = None
     integration_timeout_seconds: float = 5.0
     integration_retries: int = 2
     psgc_base_url: str = "https://psgc.gitlab.io/api"
@@ -94,6 +98,17 @@ class Settings(BaseSettings):
         return bool(
             self.cloudinary_cloud_name and self.cloudinary_api_key and self.cloudinary_api_secret
         )
+
+    @field_validator("psgc_mode", mode="before")
+    @classmethod
+    def _blank_is_unset(cls, v: object) -> object:
+        return v or None
+
+    def mode_for(self, integration: str) -> Literal["live", "mock"]:
+        """The mode one integration runs in ("psgc", "brevo", "cloudinary")."""
+        if integration == "psgc" and self.psgc_mode:
+            return self.psgc_mode
+        return self.integrations_mode
 
     @field_validator("frontend_origins", mode="before")
     @classmethod

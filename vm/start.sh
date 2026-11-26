@@ -70,7 +70,7 @@ if api_healthy; then
 else
   port_busy 8000 && fail "Port 8000 is taken by another program: run vm/stop.sh, or: ss -ltnp 'sport = :8000'"
   echo "Starting the API…"
-  start_bg "$ROOT/backend" "$LOGS/api.log" "$RUN/api.pid" .venv/bin/python scripts/run_demo.py
+  start_bg "$ROOT/backend" "$LOGS/api.log" "$RUN/api.pid" .venv/bin/python scripts/run_demo.py --public  # listens on 0.0.0.0:8000
   wait_for "$API_URL" 60 "API" "$LOGS/api.log"
   ok "API ready on http://localhost:8000 (docs at /docs)"
 fi
