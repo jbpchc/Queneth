@@ -48,6 +48,7 @@ Set up once with **[docs/VM-SETUP.md](docs/VM-SETUP.md)**, then:
 vm/start.sh --prod   # API + storefront in the background; survives closing the terminal
 vm/status.sh         # health, VM resources, log check
 vm/reset.sh          # clean demo store (0 orders), then start for presenting
+vm/tune.sh           # once per VM: lighter Ubuntu (animations, indexer, unused services off)
 vm/stop.sh
 ```
 

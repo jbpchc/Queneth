@@ -93,18 +93,20 @@ After rehearsing, run `vm/reset.sh` again so you present with a clean store.
   `bcdedit /set hypervisorlaunchtype off`, and turn off *Core isolation → Memory
   integrity* in Windows Security.
 
-### Inside the VM
+### Inside the VM (one command, once)
 
 ```bash
-gsettings set org.gnome.desktop.interface enable-animations false   # snappier desktop
-sudo sysctl vm.swappiness=10                                         # use swap less (until reboot)
+vm/tune.sh          # asks for your password once
+vm/tune.sh --undo   # put everything back
 ```
 
-To keep the swap setting after reboots:
+It turns off desktop animations and the GNOME file indexer (which otherwise
+re-scans `node_modules` and every build), makes Linux use swap only when memory
+is really short, and turns off printing, mobile-modem and network-discovery
+services a VM doesn't need. Security updates stay on. The changes survive reboots.
 
-```bash
-echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-queneth.conf
-```
+Also close apps you don't need while presenting, and consider removing Google
+Chrome from *Startup Applications* if you don't use it (it opens at every login).
 
 ## If something goes wrong
 
